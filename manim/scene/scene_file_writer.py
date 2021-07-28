@@ -399,7 +399,8 @@ class SceneFileWriter(object):
         elif config["transparent"]:
             command += ["-vcodec", "qtrle"]
         else:
-            command += ["-vcodec", "libx264", "-pix_fmt", "yuv420p"]
+            command += ["-pix_fmt", "yuv420p"]
+            # command += ["-vcodec", "libx264", "-pix_fmt", "yuv420p"]
         command += [file_path]
         self.writing_process = subprocess.Popen(command, stdin=subprocess.PIPE)
 

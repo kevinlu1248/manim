@@ -1242,7 +1242,12 @@ class Axes(VGroup, CoordinateSystem, metaclass=ConvertToOpenGL):
             z_values = np.zeros(x_values.shape)
 
         line_graph = VDict()
-        graph = VMobject(color=line_color, **kwargs)
+        # graph = VMobject(color=line_color, **kwargs)
+        if config.renderer == "opengl":
+            from manim.opengl import OpenGLVMobject
+            graph = OpenGLVMobject(color=line_color, **kwargs)
+        else:
+            graph = VMobject(color=line_color, **kwargs)
         vertices = [
             self.coords_to_point(x, y, z)
             for x, y, z in zip(x_values, y_values, z_values)
