@@ -4,20 +4,24 @@ import pymunk
 import scipy as sp
 import scipy.interpolate
 
-# config.frame_rate = 120  # otherwise clips
-config.frame_rate = 60
+# config.frame_rate = 60
+config.frame_rate = 15
 EPS = 1e-09
+
 
 def to_3D(vector_like):
     return np.array([vector_like[0], vector_like[1], 0])
 
+
 def cart2polar(x, y):
     return np.sqrt(x ** 2 + y ** 2), np.arctan(y / 2)
+
 
 def polar2cart(r, theta):
     return r * np.cos(theta), r * np.sin(theta)
 
-def get_interpolator(vectors, offset=0.001, do_use_polar=False):
+
+def get_interpolator(vectors, offset=0.001, do_use_polar=False, use_periodic=False):
     vectors = vectors + [vectors[0] + np.array([offset, offset])]
     x, y = zip(*vectors)
 
@@ -26,16 +30,19 @@ def get_interpolator(vectors, offset=0.001, do_use_polar=False):
         r = np.sqrt(x ** 2 + y ** 2)
         theta = np.arctan2(y, x)
         tck, _unused_u = sp.interpolate.splprep([r, theta], k=3, s=0)
-        return lambda t: to_3D(polar2cart(*next(zip(*sp.interpolate.splev([t], tck))))), [0, 1]
+        return (
+            lambda t: to_3D(polar2cart(*next(zip(*sp.interpolate.splev([t], tck))))),
+            [0, 1],
+        )
 
 
-    tck, _unused_u = sp.interpolate.splprep([x, y], k=3, s=0)
+    tck, _unused_u = sp.interpolate.splprep([x, y], k=3, s=0, per=bool(use_periodic))
+    # print(*tck)
+    # t, c, k = tck
+    # spl = sp.interpolate.BSpline(t, c, k)
     return lambda t: to_3D(next(zip(*sp.interpolate.splev([t], tck)))), [0, 1]
+    # return lambda t: to_3D(spl(t)[0]), [0, 1]
 
-    # kind = "cubic"
-    # f = sp.interpolate.PPoly(range(len(x)), x)
-    # # fy = sp.interpolate.PPoly(range(len(y)), y)
-    # return lambda t: to_3D(f(t)), [0, len(x) - 1]
 
 # use a SpaceScene to utilize all specific rigid-mechanics methods
 class Chains(SpaceScene):
@@ -60,14 +67,14 @@ class Chains(SpaceScene):
         self,
         func,
         t_range,
-        k=19,
-        thickness=0.01,
+        k=15,
+        thickness=0.001,
         gap_ratio=1,
         do_loop=False,
         color=WHITE,
         do_smooth=True,
         do_add_dots=False,
-        offset=0.001
+        offset=0.001,
     ):  # parametric
         # self.add(ParametricFunction(func, t_range=t_range, color=GREY))
         Chains.num_of_chains += 1
@@ -100,8 +107,10 @@ class Chains(SpaceScene):
                     .rotate(angle)
                 )
                 segments.append(rect)
-                self.init_body(rect)
+                self.init_body(rect, elasticity=0.1, density=0.1, friction=0.8)
+
                 rect.shape.filter = pymunk.ShapeFilter(group=Chains.num_of_chains)
+
                 self.add_body(rect)
 
                 if section > 1:
@@ -125,11 +134,14 @@ class Chains(SpaceScene):
             prev_point = point
 
         if do_smooth:
+
             def redraw():
                 mobjects = []
                 vectors = []
                 for i in range(k):
-                    vector = segments[i].body.local_to_world((signs[i] * dists[i] / 2 * gap_ratio, 0))
+                    vector = segments[i].body.local_to_world(
+                        (signs[i] * dists[i] / 2 * gap_ratio, 0)
+                    )
                     vectors.append(vector)
                     mobjects.append(Dot(to_3D(vector), fill_opacity=0.0))
                 interpolator, t_range = get_interpolator(vectors, offset=offset)
@@ -143,9 +155,13 @@ class Chains(SpaceScene):
             self.add(always_redraw(redraw))
         else:
             for i in range(k):
+
                 def redraw(sign=signs[i], rect=segments[i], dist=dists[i]):
-                    vectors = to_3D(rect.body.local_to_world((sign * dist / 2 * gap_ratio, 0)))
+                    vectors = to_3D(
+                        rect.body.local_to_world((sign * dist / 2 * gap_ratio, 0))
+                    )
                     return Dot(vectors)
+
                 self.add(always_redraw(redraw))
 
         if do_loop:
@@ -175,6 +191,7 @@ class Chains(SpaceScene):
     def construct(self):
         self.gap = 0.1
         self.space.space.gravity = 0, -9.81
+        self.space.space.damping = 0.1
 
         r = 0.5
 
@@ -186,8 +203,7 @@ class Chains(SpaceScene):
 
         self.make_static_body(nails)
 
-        # func = lambda t: np.array([t * 2, 3 - t ** 2, 0])
-        func = lambda t: 2 * np.array([np.cos(2 * PI * t), np.sin(2 * PI * t), 0])
+        func = lambda t: 1.9 * np.array([np.cos(2 * PI * t), np.sin(2 * PI * t), 0])
         self.make_chain(func, t_range=np.array([0, 1]), do_loop=True)
 
         self.wait(5)
