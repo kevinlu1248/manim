@@ -89,6 +89,7 @@ class SpaceSceneWithRopes(ModifiedSpaceScene):
         do_loop=False,
         color=WHITE,
         do_smooth=True,
+        do_animate_curve=True,
         do_add_dots=False,
         do_self_intersect=False,
         offset=0.001,
@@ -170,7 +171,7 @@ class SpaceSceneWithRopes(ModifiedSpaceScene):
                 for i in range(k):
                     vectors.append(
                         segments[i].body.local_to_world(
-                            (signs[i] * dists[i] / 2 * gap_ratio, 0)
+                            (-signs[i] * dists[i] / 2 * gap_ratio, 0)
                         )
                     )
                 interpolator, t_range = get_interpolator(vectors, offset=offset)
@@ -178,7 +179,10 @@ class SpaceSceneWithRopes(ModifiedSpaceScene):
                 return curve
 
             redrawn_mobjects["curve"] = always_redraw(get_curve)
-            self.add(redrawn_mobjects["curve"])
+            if do_animate_curve:
+                self.play(Create(redrawn_mobjects["curve"]))
+            else:
+                self.add(redrawn_mobjects["curve"])
         if do_add_dots:
 
             def get_dots():
@@ -218,14 +222,6 @@ class SpaceSceneWithRopes(ModifiedSpaceScene):
             pendant.body.position = segments[0].body.local_to_world(
                 (-signs[0] * dists[0] / 2 * gap_ratio, 0)
             )
-            # segments[0].set_stroke(GREEN)
-            # self.add(Dot(
-            #     to_3D(
-            #     segments[0].body.local_to_world(
-            #         (-signs[0] * dists[0] / 2 * gap_ratio, 0),
-            #     )
-            #     ), color=GREEN
-            # ))
             constraints.append(
                 pymunk.constraints.PinJoint(
                     segments[0].body,
@@ -234,14 +230,6 @@ class SpaceSceneWithRopes(ModifiedSpaceScene):
                 )
             )
             self.space.space.add(constraints[-1])
-            # segments[-1].set_stroke(BLUE)
-            # self.add(Dot(
-            #     to_3D(
-            #     segments[-1].body.local_to_world(
-            #         (signs[-1] * dists[-1] / 2 * gap_ratio, 0),
-            #     )
-            #     ), color=BLUE
-            # ))
             constraints.append(
                 pymunk.constraints.PinJoint(
                     segments[-1].body,
@@ -256,7 +244,7 @@ class SpaceSceneWithRopes(ModifiedSpaceScene):
         )
 
 
-def get_teardrop_curve(head=np.array([-1, 0, 0]), tail=np.array([1, 0, 0]), m=2):
+def get_teardrop_curve(head=np.array([-1, 0, 0]), tail=np.array([1, 0, 0]), width=1, m=2):
     length = np.linalg.norm(head - tail) / 2
     center = (head + tail) / 2
     normalized = (head - tail) / np.linalg.norm(head - tail)
@@ -267,7 +255,7 @@ def get_teardrop_curve(head=np.array([-1, 0, 0]), tail=np.array([1, 0, 0]), m=2)
         lambda t: center
         + to_3D(
             length
-            * rot_matrix.dot(np.array([np.cos(t), np.sin(t) * np.sin(t / 2) ** m]))
+            * rot_matrix.dot(np.array([np.cos(t), width * np.sin(t) * np.sin(t / 2) ** m]))
         ),
         np.array([0, 2 * PI]),
     )
@@ -276,114 +264,3 @@ def get_teardrop_curve(head=np.array([-1, 0, 0]), tail=np.array([1, 0, 0]), m=2)
 def get_smoother(t_range=[0, 1]):
     start, end = t_range
     return lambda t: end * ((2 * (t / end - 0.5)) ** 3 / 2 + 0.5)
-
-
-class MartyEscape(SpaceSceneWithRopes):
-    def setup_puzzle(
-        self,
-        curve_function=None,
-        t_range=None,
-        nail_positions=[LEFT * 2 + UP, LEFT * 2 + DOWN],
-        nail_radius=0.5,
-    ):
-        from PIL import Image
-
-        self.space.space.gravity = 0, 0
-        self.space.space.damping = 0.3
-
-        nails = []
-
-        for position in nail_positions:
-            nails.append(
-                Circle(nail_radius)
-                .set_fill(WHITE, 0)
-                .set_stroke(WHITE, 0)
-                .shift(position)
-            )
-            nails[-1].svg = (
-                SVGMobject("some1/nail.svg")
-                .scale(0.4)
-                .rotate(-PI / 12)
-                .next_to(nails[-1], ORIGIN)
-            )
-            self.add(nails[-1].svg)
-
-        nails_group = VGroup(*nails)
-        self.add(nails_group)
-        self.make_static_body(nails_group)
-
-        marty = Dot()
-
-        if not DEV_MODE:
-            img = Image.open("some1/dog_emoji.png")
-            marty_image = ImageMobject(img).scale(0.3)
-            self.add(marty_image)
-            marty_image.add_updater(
-                lambda im: im.next_to(marty, np.array([0.0, -0.5, 0.0]))
-            )
-
-        self.bring_to_front(marty)
-        self.make_rigid_body(marty)
-        print("called!")
-
-        if curve_function == None:
-            curve_function, t_range = get_teardrop_curve(
-                np.array([-3, 1.5, 0]), np.array([0, 0, 0])
-            )
-        # circle = lambda t: 1.8 * np.array([np.cos(2 * PI * t) - 1, np.sin(2 * PI * t), 0])
-
-        rope = self.make_rope(
-            curve_function,
-            t_range,
-            k=12,
-            do_loop=True,
-            pendant=marty,
-            color=ORANGE,
-            # do_smooth=False
-            # do_add_dots=True
-        )
-
-        def set_force(_self, force):
-            if hasattr(_self, "force_setter"):
-                _self.remove_updater(_self.force_setter)
-
-            def force_setter(_self):
-                _self.body.force = force
-
-            _self.add_updater(force_setter)
-            _self.force_setter = force_setter
-
-        marty.set_force = functools.partial(set_force, marty)
-
-        def disappear(_self):
-            _self.shape.filter = pymunk.ShapeFilter(
-                group=SpaceSceneWithRopes.num_of_chains
-            )
-            self.play(FadeOut(_self))
-            self.play(FadeOut(_self.svg, shift=np.array(UP)))
-
-        for nail in nails:
-            nail.disappear = functools.partial(disappear, nail)
-
-        return marty, rope, nails, nails_group
-
-    def construct(self):
-        marty, rope, nails, nails_group = self.setup_puzzle()
-
-        # self.wait(0.4)
-        marty.set_force((0.5, 0))
-        self.wait(0.1)
-        marty.set_force((0.02, 0))
-        self.wait(2)
-        nails[0].disappear()
-        marty.set_force((0.1, 0))
-        self.wait(4)
-
-        # for center
-        # marty.body.force = (1, 0)
-        # self.wait(5)
-        # self.wait(0.4)
-        # marty.set_force((0.05, 0))
-        # self.wait(1)
-        # marty.set_force((0.01, 0))
-        # self.wait(2)
