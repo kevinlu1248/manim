@@ -95,8 +95,8 @@ class SpaceSceneWithRopes(ModifiedSpaceScene):
         offset=0.001,
         pendant=None,
         elasticity=0.1,
-        density=0.1,
-        friction=0.8,
+        density=1,
+        friction=0,
     ) -> Rope:
         SpaceSceneWithRopes.num_of_chains += 1
         segments = []
@@ -244,7 +244,9 @@ class SpaceSceneWithRopes(ModifiedSpaceScene):
         )
 
 
-def get_teardrop_curve(head=np.array([-1, 0, 0]), tail=np.array([1, 0, 0]), width=1, m=2):
+def get_teardrop_curve(
+    head=np.array([-1, 0, 0]), tail=np.array([1, 0, 0]), width=1, m=2
+):
     length = np.linalg.norm(head - tail) / 2
     center = (head + tail) / 2
     normalized = (head - tail) / np.linalg.norm(head - tail)
@@ -255,7 +257,9 @@ def get_teardrop_curve(head=np.array([-1, 0, 0]), tail=np.array([1, 0, 0]), widt
         lambda t: center
         + to_3D(
             length
-            * rot_matrix.dot(np.array([np.cos(t), width * np.sin(t) * np.sin(t / 2) ** m]))
+            * rot_matrix.dot(
+                np.array([np.cos(t), width * np.sin(t) * np.sin(t / 2) ** m])
+            )
         ),
         np.array([0, 2 * PI]),
     )
