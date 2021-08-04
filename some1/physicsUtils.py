@@ -24,8 +24,11 @@ def polar2cart(r, theta):
     return r * np.cos(theta), r * np.sin(theta)
 
 
-def get_interpolator(vectors, offset=0.001, do_use_polar=False, use_periodic=False):
-    vectors = vectors + [vectors[0] + np.array([offset, offset])]
+def get_interpolator(
+    vectors, offset=0.001, do_use_polar=False, use_periodic=False, do_loop=True
+):
+    if do_loop:
+        vectors = vectors + [vectors[0] + np.array([offset, offset])]
     # vectors = vectors + [vectors[0], vectors[1]]
     x, y = zip(*vectors)
 

@@ -14,6 +14,7 @@ from physicsUtils import (
     get_smoother,
 )
 
+DEV_MODE = False
 DEV_MODE = True
 config.frame_rate = 15 if DEV_MODE else 60
 
@@ -26,6 +27,7 @@ class PuzzleScene(SpaceSceneWithRopes):
         nail_positions=[LEFT * 2 + UP, LEFT * 2 + DOWN],
         nail_radius=0.5,
         do_add=True,
+        use_circle_nails=False
     ):
         from PIL import Image
 
@@ -38,8 +40,8 @@ class PuzzleScene(SpaceSceneWithRopes):
         for position in nail_positions:
             nails.append(
                 Circle(nail_radius)
-                .set_fill(WHITE, 0)
-                .set_stroke(WHITE, 0)
+                .set_fill(WHITE, 0 if not use_circle_nails else 1)
+                .set_stroke(BLACK, opacity=1)
                 .shift(position)
             )
             animations.append(FadeIn(nails[-1]))
@@ -49,7 +51,8 @@ class PuzzleScene(SpaceSceneWithRopes):
                 .rotate(-PI / 12)
                 .next_to(nails[-1], ORIGIN)
             )
-            animations.append(FadeIn(nails[-1].svg))
+            if not use_circle_nails:
+                animations.append(FadeIn(nails[-1].svg))
 
         nails_group = VGroup(*nails)
         if do_add:
@@ -69,7 +72,8 @@ class PuzzleScene(SpaceSceneWithRopes):
         animations.append(FadeIn(marty))
 
         if curve_function == None:
-            curve_function, t_range = get_teardrop_curve(LEFT * 3, ORIGIN, 2)
+            # curve_function, t_range = get_teardrop_curve(LEFT * 3, ORIGIN, 2)
+            curve_function, t_range = PuzzleScene.get_curve("BT")
 
         if do_add:
             self.play(*animations)
@@ -142,10 +146,30 @@ class PuzzleScene(SpaceSceneWithRopes):
         tokens = s.replace("T", " T").replace("B", " B").split()
         t_radius = radius
         b_radius = radius
-        t_type = lambda r: [(-2, 0), (-2 - r, 0.5 + r), (-2, 0.5 + r * 2), (-2 + r, 0.5 + r)]
-        tb_type = lambda r: [(-2, 0), (-2 + r, 0.5 + r), (-2, 0.5 + r * 2), (-2 - r, 0.5 + r)]
-        b_type = lambda r: [(-2, 0), (-2 + r, -0.5 + -r), (-2, -0.5 + -r * 2), (-2 - r, -0.5 + -r)]
-        bb_type = lambda r: [(-2, 0), (-2 - r, -0.5 + -r), (-2, -0.5 + -r * 2), (-2 + r, -0.5 + -r)]
+        t_type = lambda r: [
+            (-2, 0),
+            (-2 - r, 0.5 + r),
+            (-2, 0.5 + r * 2),
+            (-2 + r, 0.5 + r),
+        ]
+        tb_type = lambda r: [
+            (-2, 0),
+            (-2 + r, 0.5 + r),
+            (-2, 0.5 + r * 2),
+            (-2 - r, 0.5 + r),
+        ]
+        b_type = lambda r: [
+            (-2, 0),
+            (-2 + r, -0.5 + -r),
+            (-2, -0.5 + -r * 2),
+            (-2 - r, -0.5 + -r),
+        ]
+        bb_type = lambda r: [
+            (-2, 0),
+            (-2 - r, -0.5 + -r),
+            (-2, -0.5 + -r * 2),
+            (-2 + r, -0.5 + -r),
+        ]
         prev_token = None
         for token in tokens:
             if token == "T":
@@ -196,7 +220,12 @@ class PuzzleScene(SpaceSceneWithRopes):
 
     @staticmethod
     def get_points(notation=None, file_name=None, raw_points=None, points=None):
-        if notation is None and file_name is None and raw_points is None and points is None:
+        if (
+            notation is None
+            and file_name is None
+            and raw_points is None
+            and points is None
+        ):
             raise TypeError("Need file_name or curve_points or points")
         if notation is not None:
             return PuzzleScene.notation_to_points(notation)
@@ -208,10 +237,18 @@ class PuzzleScene(SpaceSceneWithRopes):
             return points
 
     def get_curve(notation=None, file_name=None, raw_points=None, points=None):
-        return get_interpolator(PuzzleScene.get_points(notation, file_name, raw_points, points))
+        return get_interpolator(
+            PuzzleScene.get_points(notation, file_name, raw_points, points)
+        )
 
     def draw_curve_through_given_points(
-        self, notation=None, file_name=None, raw_points=None, points=None, do_animate=True, do_plot_points=True
+        self,
+        notation=None,
+        file_name=None,
+        raw_points=None,
+        points=None,
+        do_animate=True,
+        do_plot_points=True,
     ):
         dots = []
         curve_points = PuzzleScene.get_points(notation, file_name, raw_points, points)
@@ -236,8 +273,9 @@ class PuzzleScene(SpaceSceneWithRopes):
         mobjects_to_fadeout = [
             *nails,
             *[nail.svg for nail in nails],
-            rope.redrawn_mobjects["curve"],
         ]
+        if rope is not None:
+            mobjects_to_fadeout.append(rope.redrawn_mobjects["curve"])
         self.play(
             FadeOut(
                 *[
@@ -267,7 +305,8 @@ class IntroPuzzle(PuzzleScene):
         self.make_rigid_body(marty)
 
         rope = self.make_rope(
-            *get_teardrop_curve(LEFT * 3, ORIGIN, 2),
+            # *get_teardrop_curve(LEFT * 3, ORIGIN, 2),
+            *PuzzleScene.get_curve("BT"),
             k=12,
             do_loop=True,
             pendant=marty,
@@ -286,6 +325,8 @@ class IntroPuzzle(PuzzleScene):
         nails_group.disappears()
         marty.set_moment((0.3, 0))
         self.wait(10)
+
+        self.reset_puzzle(marty, rope, nails, nails_group)
 
 
 class PuzzleExample1(PuzzleScene):
@@ -324,13 +365,10 @@ class PuzzleExample2(PuzzleScene):
         self.reset_puzzle(*puzzle)
 
 
-
 class PuzzleExample3_1(PuzzleScene):
     def construct(self):
         marty, rope, nails, nails_group = (
-            puzzle := self.setup_puzzle(
-               *PuzzleScene.get_curve("BTB'")
-            )
+            puzzle := self.setup_puzzle(*PuzzleScene.get_curve("BTB'"))
         )
 
         self.wait(1)
@@ -350,9 +388,7 @@ class PuzzleExample3_1(PuzzleScene):
 class PuzzleExample3_2(PuzzleScene):
     def construct(self):
         marty, rope, nails, nails_group = (
-            puzzle := self.setup_puzzle(
-               *PuzzleScene.get_curve("BTB'")
-            )
+            puzzle := self.setup_puzzle(*PuzzleScene.get_curve("BTB'"))
         )
 
         nails[1].disappear()
@@ -375,20 +411,26 @@ class IntroSummarySlide(Scene):
 
         lines = text.split("\n")
 
-        par = Paragraph(
-            *text.split("\n"), line_spacing=2, font="cmr10", disable_ligatures=True
-        ).scale(0.8).shift(LEFT * 8)
+        par = (
+            Paragraph(
+                *text.split("\n"), line_spacing=2, font="cmr10", disable_ligatures=True
+            )
+            .scale(0.8)
+            .shift(LEFT * 8)
+        )
 
         highlight_texts = [
             [],
             ["two"],
             ["leashed", "no stakes"],
-            ["unleashed", "either stake"]
+            ["unleashed", "either stake"],
         ]
 
         for i in range(len(par)):
             for text in highlight_texts[i]:
-                par[i][lines[i].find(text): lines[i].find(text) + len(text)].set_color(YELLOW)
+                par[i][lines[i].find(text) : lines[i].find(text) + len(text)].set_color(
+                    YELLOW
+                )
 
         # for line in par.chars:
         #     self.play(Write(line))
@@ -398,5 +440,11 @@ class IntroSummarySlide(Scene):
         self.play(FadeOut(par))
 
         hint = "Hint:\nSuppose you found the answer. How would \nyou describe your answer to someone \nwithout drawing it for them?"
-        self.play(Write(Paragraph(*hint.split('\n'), line_spacing=2, font="cmr10", align="center").scale(0.8)))
+        self.play(
+            Write(
+                Paragraph(
+                    *hint.split("\n"), line_spacing=2, font="cmr10", align="center"
+                ).scale(0.8)
+            )
+        )
         self.wait(5)
