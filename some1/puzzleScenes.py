@@ -27,7 +27,7 @@ class PuzzleScene(SpaceSceneWithRopes):
         nail_positions=[LEFT * 2 + UP, LEFT * 2 + DOWN],
         nail_radius=0.5,
         do_add=True,
-        use_circle_nails=False
+        use_circle_nails=False,
     ):
         from PIL import Image
 
@@ -40,8 +40,8 @@ class PuzzleScene(SpaceSceneWithRopes):
         for position in nail_positions:
             nails.append(
                 Circle(nail_radius)
-                .set_fill(WHITE, 0 if not use_circle_nails else 1)
-                .set_stroke(BLACK, opacity=1)
+                .set_fill(WHITE, 0)
+                .set_stroke(WHITE, opacity=0 if not use_circle_nails else 1)
                 .shift(position)
             )
             animations.append(FadeIn(nails[-1]))
@@ -431,11 +431,6 @@ class IntroSummarySlide(Scene):
                 par[i][lines[i].find(text) : lines[i].find(text) + len(text)].set_color(
                     YELLOW
                 )
-
-        # for line in par.chars:
-        #     self.play(Write(line))
-        #     self.wait(0.5)
-        # self.wait(2)
 
         self.play(FadeOut(par))
 

@@ -1,9 +1,6 @@
-import functools
-
 from manim import *
 from manim.opengl import *
 from manim_physics import *
-import pymunk
 
 from physicsUtils import (
     EPS,
@@ -15,8 +12,6 @@ from physicsUtils import (
     get_smoother,
 )
 from puzzleScenes import PuzzleScene
-
-config.frame_rate = 15
 
 
 class AbstractifyTitle(Scene):
@@ -216,45 +211,48 @@ class EquivalentLoops_1(PuzzleScene):
 
 class HomotopyAnimation(Animation):
     def __init__(self, curve, other_curve, **kwargs):
-        if not isinstance(curve, ParametricFunction) or not isinstance(other_curve, ParametricFunction):
+        if not isinstance(curve, ParametricFunction) or not isinstance(
+            other_curve, ParametricFunction
+        ):
             raise TypeError("Curves must be parametric functions")
         self.og_func = curve.get_function()
         self.other_curve_func = other_curve.get_function()
         super().__init__(curve, **kwargs)
 
     def interpolate_mobject(self, alpha):
-        self.mobject.function = (
-            lambda t:
-                alpha * self.other_curve_func(t) \
-                + (1 - alpha) * self.og_func(t)
-                if alpha 
-                else self.og_func(t)
-        )
+        self.mobject.function = lambda t: alpha * self.other_curve_func(t) + (
+            1 - alpha
+        ) * self.og_func(t)
 
+        if "points" not in self.mobject.data:
+            return
         n = len(self.mobject.data["points"])
         self.mobject.data["points"] = [self.mobject.function(0)] * n
         self.mobject.init_points()
         self.mobject.data["points"] = self.mobject.data["points"][n:]
 
+
+class HomotopyWithColorChange(HomotopyAnimation):
     def interpolate_mobject(self, alpha):
-        self.mobject.function = (
-            lambda t:
-                alpha * self.other_curve_func(t) \
-                + (1 - alpha) * self.og_func(t)
-                if alpha 
-                else self.og_func(t)
-        )
-
-        n = len(self.mobject.data["points"])
-        self.mobject.data["points"] = [self.mobject.function(0)] * n
-        self.mobject.init_points()
-        self.mobject.data["points"] = self.mobject.data["points"][n:]
+        """Extremely artificial and not generalizable"""
+        super().interpolate_mobject(alpha)
+        for point in self.mobject.data["points"]:
+            if (
+                np.linalg.norm(point - (LEFT * 2 + UP)) <= 0.5
+                or np.linalg.norm(point - (LEFT * 2 + UP)) <= 0.5
+            ):
+                self.mobject.set_stroke(RED)
+                break
+        else:
+            self.mobject.set_stroke(GREEN)
 
 
 class EquivalentLoopsHomotopy(PuzzleScene):
     def construct(self):
         marty, rope, nails, nails_group = (
-            puzzle := self.setup_puzzle(*get_interpolator([(0, 0), (2, 1), (1, 2)]), use_circle_nails=True)
+            puzzle := self.setup_puzzle(
+                *get_interpolator([(0, 0), (2, 1), (1, 2)]), use_circle_nails=True
+            )
         )
 
         other_curve_func, other_t_range = get_interpolator([(0, 0), (1, -2), (3, -2)])
@@ -264,34 +262,98 @@ class EquivalentLoopsHomotopy(PuzzleScene):
             )
         )
 
-        curve_func, t_range = rope.redrawn_mobjects["curve"].get_function(), [0, 1]
-
-        """
-        animation_length = 3
-        tracker = ValueTracker(0)
-        in_between_curve_func = lambda time: (
-            lambda t: (
-                time * other_curve_func(t) + (1 - time) * curve_func(t)
-                if time
-                else curve_func(t)
+        self.play(
+            HomotopyAnimation(
+                curve,
+                rope.redrawn_mobjects["curve"],
+                rate_func=rate_functions.ease_in_out_cubic,
             )
         )
-        self.add_updater(lambda dt: tracker.increment_value(dt))
-        self.add(
-            always_redraw(
-                lambda: ParametricFunction(
-                    in_between_curve_func(
-                        rate_functions.ease_in_out_cubic(
-                            tracker.get_value() / animation_length
-                        )
-                    ),
-                    color=ORANGE,
+        self.play(FadeOut(curve))
+        self.wait(1)
+
+        func, range = PuzzleScene.get_curve("T")
+        curve = ParametricFunction(lambda t: func(1 - t), color=GREEN)
+
+        not_allowed_func = lambda t: 0.15 * rope.redrawn_mobjects[
+            "curve"
+        ].get_function()(t) + (1 - 0.15) * func(1 - t)
+
+        self.play(Create(curve))
+        self.play(
+            HomotopyWithColorChange(
+                curve,
+                ParametricFunction(not_allowed_func),
+                rate_func=rate_functions.ease_in_out_cubic,
+            )
+        )
+        self.play(
+            HomotopyWithColorChange(
+                curve,
+                ParametricFunction(lambda t: func(1 - t)),
+                rate_func=rate_functions.ease_in_out_cubic,
+            )
+        )
+
+        self.wait(1)
+
+        self.play(ApplyMethod(nails[0].set_fill, WHITE, 1))
+        self.play(FadeOut(nails[0]))
+
+        self.play(
+            HomotopyAnimation(
+                curve,
+                rope.redrawn_mobjects["curve"],
+                rate_func=rate_functions.ease_in_out_cubic,
+            )
+        )
+
+        self.wait(1)
+
+
+class AbstractifySummarySlide(Scene):
+    def construct(self):
+        # TODO: make better timings
+        text = f"""
+        Summary of Section:
+        1. We simplified this puzzle down to 
+          - A 2D plane with two holes
+          - Marty (a point)
+          - The leash (a loop confined within the plane)
+        2. Leash must follow the following constraints:
+          - Within the plane
+          - Two loops are equivalent if they can move between
+            each other through a motion confined within the plane
+        """.strip().replace(
+            " " * 8, ""
+        )
+
+        lines = text.split("\n")
+
+        par = Paragraph(
+            *text.split("\n"), line_spacing=2, font="cmr10", disable_ligatures=True
+        ).scale(0.5)
+
+        highlight_texts = [
+            [],
+            [],
+            ["2D plane", "two holes"],
+            ["point"],
+            ["loop"],
+            [],
+            ["Within"],
+            ["equivalent", "motion confined within the plane"],
+            [],
+        ]
+
+        for i in range(len(par)):
+            for text in highlight_texts[i]:
+                par[i][lines[i].find(text) : lines[i].find(text) + len(text)].set_color(
+                    YELLOW
                 )
-            )
-        )
-        self.remove(rope.redrawn_mobjects["curve"])
-        """
+            self.play(Write(par[i]))
+            self.wait(1)
+        self.wait(3)
+        self.play(FadeOut(par))
 
-        self.play(HomotopyAnimation(curve, rope.redrawn_mobjects["curve"]))
-
-        self.wait(4)
+        self.wait(1)
