@@ -139,13 +139,17 @@ class PuzzleScene(SpaceSceneWithRopes):
         return marty, rope, nails, nails_group
 
     @staticmethod
-    def notation_to_points(s: str, radius=0.7, r_increment=0.1, raw=False):
+    def notation_to_points(
+        s: str, centers=[(-2, 1), (-2, -1)], radius=0.7, r_increment=0.1, raw=False
+    ):
         # TODO: add center
         assert set(s).issubset({"T", "B", "'"})
         result = [(0, 0)]
         tokens = s.replace("T", " T").replace("B", " B").split()
         t_radius = radius
         b_radius = radius
+
+        t_center, b_center = centers
         t_type = lambda r: [
             (-2, 0),
             (-2 - r, 0.5 + r),
