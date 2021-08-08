@@ -100,6 +100,8 @@ class SpaceSceneWithRopes(ModifiedSpaceScene):
         elasticity=0.1,
         density=1,
         friction=0,
+        rope_creation_speed=1,
+        animations_at_creation=[],
     ) -> Rope:
         SpaceSceneWithRopes.num_of_chains += 1
         segments = []
@@ -182,8 +184,16 @@ class SpaceSceneWithRopes(ModifiedSpaceScene):
                 return curve
 
             redrawn_mobjects["curve"] = always_redraw(get_curve)
+            if animations_at_creation is not None and not isinstance(
+                animations_at_creation, list
+            ):
+                animations_at_creation = [animations_at_creation]
             if do_animate_curve:
-                self.play(Create(redrawn_mobjects["curve"]))
+                self.play(
+                    Create(redrawn_mobjects["curve"]),
+                    *animations_at_creation,
+                    run_time=rope_creation_speed
+                )
             else:
                 self.add(redrawn_mobjects["curve"])
         if do_add_dots:

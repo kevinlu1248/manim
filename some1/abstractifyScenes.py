@@ -17,7 +17,7 @@ from puzzleScenes import PuzzleScene
 class AbstractifyTitle(Scene):
     def construct(self):
         self.play(
-            Write(Text("Step 1:", font="cmr10", color=YELLOW).shift(LEFT * 4 + UP * 2))
+            Write(Text("Part 1:", font="cmr10", color=YELLOW).shift(LEFT * 4 + UP * 2))
         )
         self.play(Write(Text("Abstractify", font="cmr10").scale(3)))
 

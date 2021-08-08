@@ -26,8 +26,10 @@ class PuzzleScene(SpaceSceneWithRopes):
         t_range=None,
         nail_positions=[LEFT * 2 + UP, LEFT * 2 + DOWN],
         nail_radius=0.5,
+        marty_pos=ORIGIN,
         do_add=True,
         use_circle_nails=False,
+        rope_config=None,
     ):
         from PIL import Image
 
@@ -58,7 +60,7 @@ class PuzzleScene(SpaceSceneWithRopes):
         if do_add:
             self.make_static_body(nails_group)
 
-        marty = Dot(color=YELLOW)
+        marty = Dot(marty_pos, color=YELLOW)
         # self.play(FadeIn(marty))
 
         if not DEV_MODE:
@@ -83,13 +85,18 @@ class PuzzleScene(SpaceSceneWithRopes):
             self.make_rigid_body(marty)
 
         if do_add:
+            default_rope_config = {
+                "k": 12,
+                "do_loop": True,
+                "pendant": marty,
+                "color": ORANGE,
+            }
+            if rope_config is not None:
+                default_rope_config.update(rope_config)
             rope = self.make_rope(
                 curve_function,
                 t_range,
-                k=12,
-                do_loop=True,
-                pendant=marty,
-                color=ORANGE,
+                **default_rope_config
                 # do_smooth=False
                 # do_add_dots=True
             )
@@ -121,7 +128,10 @@ class PuzzleScene(SpaceSceneWithRopes):
 
         def disappear(_self):
             _self.shape.filter = pymunk.ShapeFilter(group=PuzzleScene.num_of_chains)
-            self.play(FadeOut(_self), FadeOut(_self.svg, shift=np.array(UP)))
+            if _self.svg in self.mobjects:
+                self.play(FadeOut(_self), FadeOut(_self.svg, shift=np.array(UP)))
+            else:
+                self.play(FadeOut(_self))
 
         for nail in nails:
             nail.disappear = functools.partial(disappear, nail)
@@ -203,11 +213,11 @@ class PuzzleScene(SpaceSceneWithRopes):
             else:
                 raise TypeError("Token needs to be T T' B or B'")
             prev_token = token
-        if s[0] == "T'" or s[0] == "B":
+        if tokens[0] == "T'" or tokens[0] == "B":
             result[1] = (-1, 0.2)
-        if s[-1] == "T'" or s[-1] == "B":
-            result.append((-2, -0.3))
-            result.append((-1, -0.2))
+        if tokens[-1] == "T'" or tokens[-1] == "B":
+            result.append((-2, -0))
+            result.append((-1, -0))
         return result
 
     @staticmethod
@@ -223,7 +233,9 @@ class PuzzleScene(SpaceSceneWithRopes):
             return PuzzleScene.parse_points(file.read())
 
     @staticmethod
-    def get_points(notation=None, file_name=None, raw_points=None, points=None):
+    def get_points(
+        notation=None, file_name=None, raw_points=None, points=None, **kwargs
+    ):
         if (
             notation is None
             and file_name is None
@@ -232,17 +244,19 @@ class PuzzleScene(SpaceSceneWithRopes):
         ):
             raise TypeError("Need file_name or curve_points or points")
         if notation is not None:
-            return PuzzleScene.notation_to_points(notation)
+            return PuzzleScene.notation_to_points(notation, **kwargs)
         if file_name is not None:
-            return PuzzleScene.get_points_from_file(file_name)
+            return PuzzleScene.get_points_from_file(file_name, **kwargs)
         elif raw_points is not None:
-            return PuzzleScene.parse_points(raw_points)
+            return PuzzleScene.parse_points(raw_points, **kwargs)
         else:
             return points
 
-    def get_curve(notation=None, file_name=None, raw_points=None, points=None):
+    def get_curve(
+        notation=None, file_name=None, raw_points=None, points=None, **kwargs
+    ):
         return get_interpolator(
-            PuzzleScene.get_points(notation, file_name, raw_points, points)
+            PuzzleScene.get_points(notation, file_name, raw_points, points, **kwargs)
         )
 
     def draw_curve_through_given_points(

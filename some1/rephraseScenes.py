@@ -1,5 +1,4 @@
 import random
-import math
 
 from manim import *
 from manim.opengl import *
@@ -21,7 +20,7 @@ from abstractifyScenes import HomotopyAnimation
 class RephraseTitle(Scene):
     def construct(self):
         self.play(
-            Write(Text("Step 2:", font="cmr10", color=YELLOW).shift(LEFT * 4 + UP * 2))
+            Write(Text("Part 2:", font="cmr10", color=YELLOW).shift(LEFT * 4 + UP * 2))
         )
         self.play(Write(Text("Rephrase", font="cmr10").scale(3)))
 
@@ -425,22 +424,17 @@ class MoveAroundScene_2(PuzzleScene):
                 equals := Text(":", font="cmr10").shift(LEFT * 3),
                 plus_1 := Text("→", font="cmr10"),
                 plus_2 := Text("→", font="cmr10").shift(RIGHT * 3),
-            )
+            ),
         )
 
         self.wait(3)
 
         self.play(
             FadeOut(
-                compressed_curve,
-                b_curve,
-                t_curve_1,
-                t_curve_2,
-                equals,
-                plus_1,
-                plus_2
+                compressed_curve, b_curve, t_curve_1, t_curve_2, equals, plus_1, plus_2
             )
         )
+
 
 class ElementaryLoops(PuzzleScene):
     def construct(self):
@@ -457,33 +451,46 @@ class ElementaryLoops(PuzzleScene):
 
         bug = Dot(color=ORANGE)
         curve = ParametricFunction(
-            lambda t: UP * 1.5 + 1.5 * np.array(
-                [np.cos(-t * PI * 2 / 3 + 3 *  PI / 2), np.sin(-t * PI * 2 / 3 + 3 * PI / 2), 0]
+            lambda t: UP * 1.5
+            + 1.5
+            * np.array(
+                [
+                    np.cos(-t * PI * 2 / 3 + 3 * PI / 2),
+                    np.sin(-t * PI * 2 / 3 + 3 * PI / 2),
+                    0,
+                ]
             ),
             color=ORANGE,
         )
 
         self.play(FadeIn(bug))
-        self.add_updater(
-            updater := lambda _: bug.move_to(curve.data["points"][-1])
-        )
+        self.add_updater(updater := lambda _: bug.move_to(curve.data["points"][-1]))
 
         self.play(Create(curve), run_time=3)  # use 7 for prod
 
         self.play(
             FadeIn(
                 bug_marker := Text("Bug →").scale(0.5).next_to(bug, LEFT * 2),
-                curve_marker := Text("Loop →").scale(0.5).next_to(curve, LEFT * 2)
+                curve_marker := Text("Loop →").scale(0.5).next_to(curve, LEFT * 2),
             )
         )
         self.wait(1)
         self.play(FadeOut(bug_marker, curve_marker))
         self.add(
-            unloop_dir := Arrow(start=bug.get_center() + LEFT / 2, end=bug.get_center() + LEFT * 1.5 + DOWN),
-            t_dir := Arrow(start=bug.get_center() + UP / 2, end=bug.get_center() + RIGHT + UP * 1.5),
-            unloop_text := Text("Unloop").scale(0.5).next_to(unloop_dir, (UP + LEFT) * 0.01).rotate(PI / 4),
-            t_text := Text("Loop").scale(0.5).next_to(t_dir, (UP + LEFT) * 0.01).rotate(PI / 4),
-
+            unloop_dir := Arrow(
+                start=bug.get_center() + LEFT / 2,
+                end=bug.get_center() + LEFT * 1.5 + DOWN,
+            ),
+            t_dir := Arrow(
+                start=bug.get_center() + UP / 2, end=bug.get_center() + RIGHT + UP * 1.5
+            ),
+            unloop_text := Text("Unloop")
+            .scale(0.5)
+            .next_to(unloop_dir, (UP + LEFT) * 0.01)
+            .rotate(PI / 4),
+            t_text := Text("Loop")
+            .scale(0.5)
+            .next_to(t_dir, (UP + LEFT) * 0.01)
+            .rotate(PI / 4),
         )
         self.wait(3)
-
