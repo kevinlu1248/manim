@@ -15,8 +15,11 @@ from physicsUtils import (
 )
 
 DEV_MODE = False
-DEV_MODE = True
-config.frame_rate = 15 if DEV_MODE else 60
+config.frame_rate = 15
+config.frame_rate = 30
+# DEV_MODE = True
+# if not DEV_MODE:
+#     config.frame_rate = 60
 
 
 class PuzzleScene(SpaceSceneWithRopes):
@@ -63,13 +66,12 @@ class PuzzleScene(SpaceSceneWithRopes):
         marty = Dot(marty_pos, color=YELLOW)
         # self.play(FadeIn(marty))
 
-        if not DEV_MODE:
-            img = Image.open("some1/dog_emoji.png")
-            marty.image = ImageMobject(img).scale(0.3)
-            animations.append(FadeIn(marty.image))
-            marty.image.add_updater(
-                lambda im: im.next_to(marty, np.array([0.0, -0.5, 0.0]))
-            )
+        marty.image = SVGMobject("some1/marty.svg").scale(0.3)
+        # marty.image = ImageMobject(img).scale(0.3)
+        animations.append(FadeIn(marty.image))
+        marty.image.add_updater(
+            lambda im: im.next_to(marty, np.array([0.5, 0.0, 0.0]))
+        )
 
         animations.append(FadeIn(marty))
 
@@ -291,35 +293,59 @@ class PuzzleScene(SpaceSceneWithRopes):
         mobjects_to_fadeout = [
             *nails,
             *[nail.svg for nail in nails],
+            marty.image
         ]
         if rope is not None:
             mobjects_to_fadeout.append(rope.redrawn_mobjects["curve"])
-        self.play(
-            FadeOut(
-                *[
-                    mobject
-                    for mobject in mobjects_to_fadeout
-                    if mobject in self.mobjects
-                ]
-            ),
-            Flash(marty, color=YELLOW),
-        )
+        if [mobject for mobject in mobjects_to_fadeout if mobject in self.mobjects]:
+            self.play(
+                FadeOut(
+                    *[
+                        mobject
+                        for mobject in mobjects_to_fadeout
+                        if mobject in self.mobjects
+                    ]
+                ),
+                Flash(marty, color=YELLOW),
+            )
+        else:
+            self.play(Flash(marty, color=YELLOW))
         for mobject in mobjects_to_fadeout:
             del mobject
 
 
+class IntroScreenPuzzle(PuzzleScene):
+    def construct(self):
+        marty, rope, nails, nails_group = (
+            puzzle := self.setup_puzzle(
+                *PuzzleScene.get_curve("T'BTB"),
+                rope_config={"rope_creation_speed": 5, "k": 18},
+            )
+        )
+
+        marty.set_moment((0.2, 0))
+        self.wait(3)
+
+        nails[1].disappear()
+        marty.set_moment((0.3, 0))
+        self.wait(3)
+        marty.set_moment((0.5, 0))
+        self.wait(8)
+
+        self.reset_puzzle(*puzzle)
+
+
 class IntroPuzzle(PuzzleScene):
     def construct(self):
-        marty, _unused_rope, nails, nails_group = self.setup_puzzle(do_add=False)
+        marty, _unused_rope, nails, nails_group = (
+            puzzle := self.setup_puzzle(do_add=False)
+        )
 
         self.play(FadeIn(nails[0].svg), FadeIn(nails[1].svg))
-        self.add(nails[0])
-        self.add(nails[1])
+        self.add(nails[0], nails[1])
         self.make_static_body(nails_group)
 
-        self.play(FadeIn(marty))
-        if not DEV_MODE:
-            self.play(FadeIn(marty.image))
+        self.play(FadeIn(marty), FadeIn(label := Text("← Marty", font="cmr10").next_to(marty, RIGHT * 4)), FadeIn(marty.image))
         self.make_rigid_body(marty)
 
         rope = self.make_rope(
@@ -331,7 +357,7 @@ class IntroPuzzle(PuzzleScene):
             color=ORANGE,
         )
 
-        # marty.set_force((0.2, 0))
+        self.play(FadeOut(label))
         marty.set_moment((0.2, 0))
         self.wait(1)
 
@@ -339,12 +365,34 @@ class IntroPuzzle(PuzzleScene):
         marty.set_moment((0.1, 0))
         self.wait(5)
 
+        marty.set_moment((0.1, 0.1))
+        self.wait(5)
+
+        marty.set_moment((0.1, -0.1))
+        self.wait(5)
+
         # PULL STAKES OUT
         nails_group.disappears()
         marty.set_moment((0.3, 0))
-        self.wait(10)
+        self.wait(5)
 
-        self.reset_puzzle(marty, rope, nails, nails_group)
+        self.reset_puzzle(*puzzle)
+
+class IntroPuzzle_2(Scene):
+    def construct(self):
+        self.play(Write(but_text := Text("But...", font="cmr10").scale(0.8)))
+        self.wait(1)
+        self.play(Write(text_1 := Text("Marty released when one stake is pulled", font="cmr10").scale(0.8)), but_text.animate.shift(UP * 2))
+        self.wait(1)
+        self.play(Write(Text("Marty not released when neither stakes are pulled", font="cmr10").scale(0.8).shift(DOWN * 2)))
+        # self.play(FadeOut(*self.mobjects))
+        self.wait(1)
+
+
+class PuzzleTitle(Scene):
+    def construct(self):
+        self.play(Write(Text("The Puzzle", font="cmr10").scale(3)), run_time=3)
+        self.wait(1)
 
 
 class PuzzleExample1(PuzzleScene):
@@ -352,36 +400,51 @@ class PuzzleExample1(PuzzleScene):
         marty, rope, nails, nails_group = (puzzle := self.setup_puzzle())
         marty.set_force((0.1, 0))
         marty.set_moment((0.2, 0))
-        self.wait(2)  # like 10 for prod
+        self.wait(4)  # like 10 for prod
         marty.set_moment((0.2, 0))
 
         nails[0].disappear()
         # self.wait(3)
-        marty.set_moment((0.2, 0))
+        # marty.set_moment((0.2, 0))
+        self.wait(3)
         self.reset_puzzle(*puzzle)
-        self.wait(1)
 
 
-class PuzzleExample2(PuzzleScene):
+class PuzzleExample2_1(PuzzleScene):
     def construct(self):
         marty, rope, nails, nails_group = (
             puzzle := self.setup_puzzle(
-                *get_teardrop_curve(
-                    np.array([-3, 1.5, 0]),
-                )
+                *PuzzleScene.get_curve("T'")
             )
         )
         marty.set_force((0.2, 0))
         self.wait(0.8)
         marty.set_force((0.07, 0))
-        self.wait(2)  # like 10 for prod
+        self.wait(6)  # like 10 for prod
 
         nails[1].disappear()
         marty.set_force((0.07, 0))
-        self.wait(5)
+        self.wait(3)
 
         self.reset_puzzle(*puzzle)
 
+class PuzzleExample2_2(PuzzleScene):
+    def construct(self):
+        marty, rope, nails, nails_group = (
+            puzzle := self.setup_puzzle(
+                *PuzzleScene.get_curve("T'")
+            )
+        )
+        marty.set_force((0.2, 0))
+        self.wait(0.8)
+        marty.set_force((0.07, 0))
+        self.wait(6)  # like 10 for prod
+
+        nails[0].disappear()
+        marty.set_force((0.07, 0))
+        self.wait(3)
+
+        self.reset_puzzle(*puzzle)
 
 class PuzzleExample3_1(PuzzleScene):
     def construct(self):
@@ -389,18 +452,16 @@ class PuzzleExample3_1(PuzzleScene):
             puzzle := self.setup_puzzle(*PuzzleScene.get_curve("BTB'"))
         )
 
-        self.wait(1)
         marty.set_force((0.1, 0))
-        marty.set_moment((0.2, 0))
-        self.wait(5)
+        marty.set_moment((0.3, 0))
+        self.wait(2)
 
         nails[0].disappear()
 
-        marty.set_moment((0.8, 0))
-        self.wait(5)
+        marty.set_moment((0.5, 0))
+        self.wait(3)
 
         self.reset_puzzle(*puzzle)
-        self.wait(1)
 
 
 class PuzzleExample3_2(PuzzleScene):
@@ -409,11 +470,16 @@ class PuzzleExample3_2(PuzzleScene):
             puzzle := self.setup_puzzle(*PuzzleScene.get_curve("BTB'"))
         )
 
+        marty.set_force((0.1, 0))
+        marty.set_moment((0.3, 0))
+        self.wait(2)
+
         nails[1].disappear()
 
-        marty.set_force((0.05, 0))
-        marty.set_moment((0.3, 0))
-        self.wait(5)
+        marty.set_moment((0.5, 0))
+        self.wait(3)
+
+        self.reset_puzzle(*puzzle)
 
 
 class IntroSummarySlide(Scene):
@@ -431,10 +497,12 @@ class IntroSummarySlide(Scene):
 
         par = (
             Paragraph(
-                *text.split("\n"), line_spacing=2, font="cmr10", disable_ligatures=True
-            )
-            .scale(0.8)
-            .shift(LEFT * 8)
+                *text.split("\n"),
+                line_spacing=2,
+                font="cmr10",
+                disable_ligatures=True,
+                alignment="left",
+            ).scale(0.8)
         )
 
         highlight_texts = [
@@ -449,6 +517,10 @@ class IntroSummarySlide(Scene):
                 par[i][lines[i].find(text) : lines[i].find(text) + len(text)].set_color(
                     YELLOW
                 )
+            self.play(Write(par.chars[i]))
+            self.wait(0.5)
+
+        self.wait(3)
 
         self.play(FadeOut(par))
 
@@ -461,3 +533,49 @@ class IntroSummarySlide(Scene):
             )
         )
         self.wait(5)
+
+
+class ChemPhysEquations(ModifiedSpaceScene):
+    def construct(self):
+        self.space.space.gravity = (0, -5)
+        self.play(
+            Create(
+                ground := Rectangle(width=10, height=0.05, color=ORANGE)
+                .shift(DOWN * 3)
+                .set_fill(ORANGE, opacity=1)
+            )
+        )
+        self.make_static_body(ground)
+
+        eqs = [
+            (r"pH=pK_a+\log(\frac{[A^-]}{[HA]})", GREEN),
+            (r"PV=nRT", BLUE),
+            (r"k=Ae^{\frac{-E_a}{RT}}", YELLOW),
+            (r"P=e\sigma AT", RED),
+        ]
+
+        for eq, color in eqs:
+            text = MathTex(eq, color=color)
+            self.play(Write(text))
+            for char in text.family_members_with_points():
+                self.make_rigid_body(char)
+            self.wait(4)
+
+class NoNumbers(Scene):
+    def construct(self):
+        self.play(FadeIn(
+            *(texts := [
+                MathTex("\pi").shift(2 * LEFT + UP * 1.5),
+                MathTex("e").shift(2 * RIGHT + UP / 2),
+                MathTex("N_a").shift(2 * LEFT + DOWN / 2),
+                MathTex("TREE(3)").shift(1.5 * RIGHT + DOWN * 1.5)
+            ])
+        ))
+
+        self.play(Create(
+            circle := Circle(radius=3.5, color=RED)
+        ))
+
+        self.play(Create(line := Line(3.5 / np.sqrt(2) * (LEFT + DOWN), 3.5 / np.sqrt(2) * (UP + RIGHT), color=RED)))
+
+        self.wait(1)

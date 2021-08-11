@@ -13,6 +13,8 @@ from physicsUtils import (
 )
 from puzzleScenes import PuzzleScene
 
+config.frame_rate = 30
+
 
 class AbstractifyTitle(Scene):
     def construct(self):
@@ -20,6 +22,7 @@ class AbstractifyTitle(Scene):
             Write(Text("Part 1:", font="cmr10", color=YELLOW).shift(LEFT * 4 + UP * 2))
         )
         self.play(Write(Text("Abstractify", font="cmr10").scale(3)))
+        self.wait(10)
 
 
 class Konisberg(Scene):
@@ -43,7 +46,8 @@ class Konisberg(Scene):
             ]
         )
 
-        self.add(konisberg)
+        self.play(FadeIn(konisberg))
+        self.wait(10)
         self.play(*[DrawBorderThenFill(vertex) for vertex in vertices])
 
         curves = [
@@ -82,12 +86,28 @@ class AbstractifyAnimation(PuzzleScene):
         # requires DEV_MODE = False
         marty, rope, nails, nails_group = (puzzle := self.setup_puzzle())
 
+        self.wait(7)
+
         self.play(
             FadeOut(*[nail.svg for nail in nails]),
             *[ApplyMethod(nail.set_fill, WHITE, 1) for nail in nails],
         )
 
-        self.wait(1)
+        self.wait(2)
+        self.play(Flash(marty))
+        self.wait(4)
+        self.play(rope.redrawn_mobjects["curve"].animate.set_stroke(color=YELLOW))
+        self.wait(2)
+        self.play(rope.redrawn_mobjects["curve"].animate.set_stroke(color=ORANGE))
+        self.wait(10)
+        
+        self.add(tracker := Dot(color=ORANGE))
+        curve = ParametricFunction(rope.redrawn_mobjects["curve"].get_function(), color=ORANGE)
+        self.add_updater(lambda _: tracker.move_to(curve.data["points"][-1]))
+        self.play(Create(curve), run_time=3)
+        self.play(Flash(marty))
+
+        self.wait(6)
 
         self.play(
             *[
@@ -96,7 +116,7 @@ class AbstractifyAnimation(PuzzleScene):
             ]
         )
 
-        self.wait(1)
+        self.wait(10)
 
 
 class PaperAnalogy(Scene):
@@ -119,9 +139,10 @@ class PaperAnalogy(Scene):
                     v_range=[-5, 5],
                     color="#f2eecb",
                 )
-            )
+            ),
+            run_time=3
         )
-        # self.wait(1)
+        self.wait(1)
         self.play(
             GrowFromCenter(
                 hole1 := Circle(0.5, color=WHITE)
@@ -133,6 +154,7 @@ class PaperAnalogy(Scene):
                 .set_fill(BLACK, 1)
                 .shift(LEFT * 2 + DOWN)
             ),
+            run_time=3
         )
         marty = Dot(color=YELLOW)
         marty.set_fill(GRAPHITE_COLOR, 1)
@@ -178,8 +200,8 @@ class PaperAnalogy(Scene):
                 + np.array([0, 0, (pencil_tip_length + pencil_body_height) / 2])
             )
         )
-        self.play(Create(curve, lag_ratio=0), run_time=5)
-        self.wait(1)
+        self.play(Create(curve, lag_ratio=0), run_time=7)
+        self.wait(2)
 
         # TODO: tilt pencil
 
@@ -188,9 +210,37 @@ class PaperAnalogy(Scene):
         self.play(ApplyMethod(plane.scale, 0.01))
         self.remove(plane)
 
-        self.interactive_embed()
-        self.wait()
 
+class SameLoopsQuestion(Scene):
+    def construct(self):
+        self.play(Write(Text("How do we know if two loops are the same?", font="cmr10").scale(0.8)), run_time=2)
+        self.wait(3)
+
+class SameLoopsL(PuzzleScene):
+    def construct(self):
+        marty, rope, nails, nails_group = (puzzle := self.setup_puzzle(
+            *PuzzleScene.get_curve("T")
+        ))
+
+        marty.set_moment((0.3, 0))
+        self.wait(5)
+        nails[0].disappear()
+        marty.set_moment((0.5, 0))
+        self.wait(4)
+        self.reset_puzzle(*puzzle)
+
+class SameLoopsR(PuzzleScene):
+    def construct(self):
+        marty, rope, nails, nails_group = (puzzle := self.setup_puzzle(
+            *get_interpolator([(0, 0), (-1, 2), (-3, 3), (-4, 2), (-1, 0)])
+        ))
+
+        marty.set_moment((0.3, 0))
+        self.wait(5)
+        nails[0].disappear()
+        marty.set_moment((0.5, 0))
+        self.wait(4)
+        self.reset_puzzle(*puzzle)
 
 class EquivalentLoops_1(PuzzleScene):
     def construct(self):
