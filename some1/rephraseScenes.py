@@ -20,10 +20,26 @@ from abstractifyScenes import HomotopyAnimation
 class RephraseTitle(Scene):
     def construct(self):
         self.play(
-            Write(Text("Part 2:", font="cmr10", color=YELLOW).shift(LEFT * 4 + UP * 2))
+            Write(Text("Part 2:", font="cmr10", color=YELLOW).shift(LEFT * 4 + UP * 2)),
+            run_time=3
         )
-        self.play(Write(Text("Rephrase", font="cmr10").scale(3)))
+        self.play(Write(Text("Rephrase", font="cmr10").scale(3)),
+            run_time=3
+        )
+        self.wait(12)
 
+class HintRecall(Scene):
+    def construct(self):
+        hint = "Recall hint:\nSuppose you found the answer. How would \nyou describe your answer to someone \nwithout drawing it for them?"
+        self.play(
+            Write(
+                Paragraph(
+                    *hint.split("\n"), line_spacing=2, font="cmr10", align="center"
+                ).scale(0.8)
+            ),
+            run_time = 3
+        )
+        self.wait(5)
 
 class Unloop(PuzzleScene):
     def construct(self):
@@ -33,7 +49,10 @@ class Unloop(PuzzleScene):
             )
         )
 
+        self.wait(7)
+
         self.play(Write(text := Text("Unloop").shift(DOWN * 3)))
+        self.wait(2)
         self.play(FadeOut(text))
 
         self.reset_puzzle(*puzzle)
@@ -88,7 +107,7 @@ class BreakingDownLoops(PuzzleScene):
             run_time=2,
         )
 
-        self.wait(1)
+        self.wait(4)
 
         self.play(
             FadeOut(btt_curve),
@@ -123,6 +142,7 @@ class BreakingDownLoops(PuzzleScene):
 
         btt_new = ParametricFunction(*PuzzleScene.get_curve("BTT"), color=ORANGE)
 
+        self.wait(3)
         self.play(FadeOut(btt_curve), FadeIn(btt_new, bt_curve, t_curve))
         btt_curve = btt_new
 
@@ -146,9 +166,9 @@ class BreakingDownLoops(PuzzleScene):
             FadeIn(equals_1, plus_1),
         )
 
-        self.wait(1)
-
+        self.wait(8)
         self.play(FadeOut(btt_curve, t_curve))
+        self.wait(2)
 
         self.play(
             FadeOut(bt_curve),
@@ -167,7 +187,10 @@ class BreakingDownLoops(PuzzleScene):
             ),
             run_time=2,
         )
-        self.play(FadeIn(bt_curve), FadeOut(b_curve, t_curve_2))
+        self.play(
+            FadeIn(bt_curve), 
+            FadeOut(b_curve, t_curve_2)
+        )
 
         bt_func, b_t_func = bt_curve.get_function(), concat_funcs(
             PuzzleScene.get_curve("B")[0], PuzzleScene.get_curve("T")[0]
@@ -176,13 +199,13 @@ class BreakingDownLoops(PuzzleScene):
             lambda t: bt_func(t) + LEFT * 2,
             lambda t: b_t_func(t) + LEFT * 2,
         )
-        self.play(
-            HomotopyAnimation(
-                bt_curve := ParametricFunction(bt_shifted, color=BLUE),
-                ParametricFunction(b_t_shifted),
-                run_time=3,
-            )
-        )
+        # self.play(
+        #     HomotopyAnimation(
+        #         bt_curve := ParametricFunction(bt_shifted, color=BLUE),
+        #         ParametricFunction(b_t_shifted),
+        #         run_time=3,
+        #     )
+        # )
 
         self.play(
             FadeOut(bt_curve),
@@ -194,6 +217,10 @@ class BreakingDownLoops(PuzzleScene):
                 ).shift(LEFT * 2),
             ),
         )
+
+        # bt_new = ParametricFunction(
+        #     *PuzzleScene.get_curve("BT"), color=BLUE
+        # ).shift(LEFT * 2)
 
         bt_curve = bt_new
         bt_copy_2, b_copy, t_copy_2 = (
@@ -207,6 +234,8 @@ class BreakingDownLoops(PuzzleScene):
             t_copy_2.animate.scale(0.5).move_to(RIGHT * 5.5),
             FadeIn(equals_2, plus_2),
         )
+
+        self.wait(2)
 
         btt_f, equals_f, b_f, plus_f_1, t_f_2, plus_f_2, t_f_1 = (
             mobject.copy()
@@ -230,6 +259,7 @@ class BreakingDownLoops(PuzzleScene):
             plus_f_2.animate.shift(DOWN * 2.5),
             t_f_1.animate.shift(DOWN * 5),
         )
+        self.wait(10)
 
 
 class RandomMotion(Animation):

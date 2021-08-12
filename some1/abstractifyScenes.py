@@ -14,6 +14,7 @@ from physicsUtils import (
 from puzzleScenes import PuzzleScene
 
 config.frame_rate = 30
+# config.frame_rate = 15
 
 
 class AbstractifyTitle(Scene):
@@ -306,18 +307,21 @@ class EquivalentLoopsHomotopy(PuzzleScene):
         )
 
         other_curve_func, other_t_range = get_interpolator([(0, 0), (1, -2), (3, -2)])
+        self.wait(1)
         self.play(
             Create(
                 curve := ParametricFunction(other_curve_func, other_t_range, color=BLUE)
-            )
+            ),
         )
+        self.wait(1)
 
         self.play(
             HomotopyAnimation(
                 curve,
                 rope.redrawn_mobjects["curve"],
                 rate_func=rate_functions.ease_in_out_cubic,
-            )
+            ),
+            run_time=5
         )
         self.play(FadeOut(curve))
         self.wait(1)
@@ -335,17 +339,19 @@ class EquivalentLoopsHomotopy(PuzzleScene):
                 curve,
                 ParametricFunction(not_allowed_func),
                 rate_func=rate_functions.ease_in_out_cubic,
-            )
+            ),
+            run_time=2,
         )
         self.play(
             HomotopyWithColorChange(
                 curve,
                 ParametricFunction(lambda t: func(1 - t)),
                 rate_func=rate_functions.ease_in_out_cubic,
-            )
+            ),
+            run_time=2,
         )
 
-        self.wait(1)
+        self.wait(7)
 
         self.play(ApplyMethod(nails[0].set_fill, WHITE, 1))
         self.play(FadeOut(nails[0]))
@@ -355,10 +361,39 @@ class EquivalentLoopsHomotopy(PuzzleScene):
                 curve,
                 rope.redrawn_mobjects["curve"],
                 rate_func=rate_functions.ease_in_out_cubic,
-            )
+            ),
+            run_time=3
         )
 
-        self.wait(1)
+        self.wait(5)
+
+
+class AbstractifiedQuestionSummary(Scene):
+    def construct(self):
+        text = """
+        New question:
+        How do we construct a loop not equivalent
+        to a loop going around neither holes, 
+        unless a hole is filled in?
+        """.strip().replace(" " * 8, "")
+        lines = text.split('\n')
+        par = Paragraph(*text.split('\n'), line_spacing=2, font="cmr10", disable_ligatures=True)
+        highlight_texts = [
+            [],
+            ["not equivalent"],
+            ["loop going around neither holes"],
+            ["unless"]
+        ]
+
+        for i in range(len(par)):
+            for text in highlight_texts[i]:
+                par[i][lines[i].find(text) : lines[i].find(text) + len(text)].set_color(
+                    YELLOW
+                )
+            self.play(Write(par[i]))
+            if i == 0:
+                self.wait(3)
+        self.wait(9)
 
 
 class AbstractifySummarySlide(Scene):
