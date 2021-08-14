@@ -69,9 +69,7 @@ class PuzzleScene(SpaceSceneWithRopes):
         marty.image = SVGMobject("some1/marty.svg").scale(0.3)
         # marty.image = ImageMobject(img).scale(0.3)
         animations.append(FadeIn(marty.image))
-        marty.image.add_updater(
-            lambda im: im.next_to(marty, np.array([0.5, 0.0, 0.0]))
-        )
+        marty.image.add_updater(lambda im: im.next_to(marty, np.array([0.5, 0.0, 0.0])))
 
         animations.append(FadeIn(marty))
 
@@ -290,11 +288,7 @@ class PuzzleScene(SpaceSceneWithRopes):
         marty.set_force((0, 0))
         marty.set_moment((0, 0))
         self.remove(marty)
-        mobjects_to_fadeout = [
-            *nails,
-            *[nail.svg for nail in nails],
-            marty.image
-        ]
+        mobjects_to_fadeout = [*nails, *[nail.svg for nail in nails], marty.image]
         if rope is not None:
             mobjects_to_fadeout.append(rope.redrawn_mobjects["curve"])
         if [mobject for mobject in mobjects_to_fadeout if mobject in self.mobjects]:
@@ -345,7 +339,11 @@ class IntroPuzzle(PuzzleScene):
         self.add(nails[0], nails[1])
         self.make_static_body(nails_group)
 
-        self.play(FadeIn(marty), FadeIn(label := Text("← Marty", font="cmr10").next_to(marty, RIGHT * 4)), FadeIn(marty.image))
+        self.play(
+            FadeIn(marty),
+            FadeIn(label := Text("← Marty", font="cmr10").next_to(marty, RIGHT * 4)),
+            FadeIn(marty.image),
+        )
         self.make_rigid_body(marty)
 
         rope = self.make_rope(
@@ -378,13 +376,27 @@ class IntroPuzzle(PuzzleScene):
 
         self.reset_puzzle(*puzzle)
 
+
 class IntroPuzzle_2(Scene):
     def construct(self):
         self.play(Write(but_text := Text("But...", font="cmr10").scale(0.8)))
         self.wait(1)
-        self.play(Write(text_1 := Text("Marty released when one stake is pulled", font="cmr10").scale(0.8)), but_text.animate.shift(UP * 2))
+        self.play(
+            Write(
+                text_1 := Text(
+                    "Marty released when one stake is pulled", font="cmr10"
+                ).scale(0.8)
+            ),
+            but_text.animate.shift(UP * 2),
+        )
         self.wait(1)
-        self.play(Write(Text("Marty not released when neither stakes are pulled", font="cmr10").scale(0.8).shift(DOWN * 2)))
+        self.play(
+            Write(
+                Text("Marty not released when neither stakes are pulled", font="cmr10")
+                .scale(0.8)
+                .shift(DOWN * 2)
+            )
+        )
         # self.play(FadeOut(*self.mobjects))
         self.wait(1)
 
@@ -413,9 +425,7 @@ class PuzzleExample1(PuzzleScene):
 class PuzzleExample2_1(PuzzleScene):
     def construct(self):
         marty, rope, nails, nails_group = (
-            puzzle := self.setup_puzzle(
-                *PuzzleScene.get_curve("T'")
-            )
+            puzzle := self.setup_puzzle(*PuzzleScene.get_curve("T'"))
         )
         marty.set_force((0.2, 0))
         self.wait(0.8)
@@ -428,12 +438,11 @@ class PuzzleExample2_1(PuzzleScene):
 
         self.reset_puzzle(*puzzle)
 
+
 class PuzzleExample2_2(PuzzleScene):
     def construct(self):
         marty, rope, nails, nails_group = (
-            puzzle := self.setup_puzzle(
-                *PuzzleScene.get_curve("T'")
-            )
+            puzzle := self.setup_puzzle(*PuzzleScene.get_curve("T'"))
         )
         marty.set_force((0.2, 0))
         self.wait(0.8)
@@ -445,6 +454,7 @@ class PuzzleExample2_2(PuzzleScene):
         self.wait(3)
 
         self.reset_puzzle(*puzzle)
+
 
 class PuzzleExample3_1(PuzzleScene):
     def construct(self):
@@ -495,15 +505,13 @@ class IntroSummarySlide(Scene):
 
         lines = text.split("\n")
 
-        par = (
-            Paragraph(
-                *text.split("\n"),
-                line_spacing=2,
-                font="cmr10",
-                disable_ligatures=True,
-                alignment="left",
-            ).scale(0.8)
-        )
+        par = Paragraph(
+            *text.split("\n"),
+            line_spacing=2,
+            font="cmr10",
+            disable_ligatures=True,
+            alignment="left",
+        ).scale(0.8)
 
         highlight_texts = [
             [],
@@ -545,7 +553,8 @@ class ChemPhysEquations(ModifiedSpaceScene):
                 .set_fill(ORANGE, opacity=1)
             )
         )
-        self.make_static_body(ground)
+        ground_thick = Rectangle(width=10, height=2).set_fill(opacity=0).set_stroke(opacity=0).shift(DOWN*4)
+        self.make_static_body(ground, ground_thick)
 
         eqs = [
             (r"pH=pK_a+\log(\frac{[A^-]}{[HA]})", GREEN),
@@ -561,21 +570,32 @@ class ChemPhysEquations(ModifiedSpaceScene):
                 self.make_rigid_body(char)
             self.wait(4)
 
+
 class NoNumbers(Scene):
     def construct(self):
-        self.play(FadeIn(
-            *(texts := [
-                MathTex("\pi").shift(2 * LEFT + UP * 1.5),
-                MathTex("e").shift(2 * RIGHT + UP / 2),
-                MathTex("N_a").shift(2 * LEFT + DOWN / 2),
-                MathTex("TREE(3)").shift(1.5 * RIGHT + DOWN * 1.5)
-            ])
-        ))
+        self.play(
+            FadeIn(
+                *(
+                    texts := [
+                        MathTex("\pi").shift(2 * LEFT + UP * 1.5),
+                        MathTex("e").shift(2 * RIGHT + UP / 2),
+                        MathTex("N_a").shift(2 * LEFT + DOWN / 2),
+                        MathTex("TREE(3)").shift(1.5 * RIGHT + DOWN * 1.5),
+                    ]
+                )
+            )
+        )
 
-        self.play(Create(
-            circle := Circle(radius=3.5, color=RED)
-        ))
+        self.play(Create(circle := Circle(radius=3.5, color=RED)))
 
-        self.play(Create(line := Line(3.5 / np.sqrt(2) * (LEFT + DOWN), 3.5 / np.sqrt(2) * (UP + RIGHT), color=RED)))
+        self.play(
+            Create(
+                line := Line(
+                    3.5 / np.sqrt(2) * (LEFT + DOWN),
+                    3.5 / np.sqrt(2) * (UP + RIGHT),
+                    color=RED,
+                )
+            )
+        )
 
         self.wait(1)

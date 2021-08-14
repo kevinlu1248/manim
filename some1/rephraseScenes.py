@@ -21,12 +21,11 @@ class RephraseTitle(Scene):
     def construct(self):
         self.play(
             Write(Text("Part 2:", font="cmr10", color=YELLOW).shift(LEFT * 4 + UP * 2)),
-            run_time=3
+            run_time=3,
         )
-        self.play(Write(Text("Rephrase", font="cmr10").scale(3)),
-            run_time=3
-        )
+        self.play(Write(Text("Rephrase", font="cmr10").scale(3)), run_time=3)
         self.wait(12)
+
 
 class HintRecall(Scene):
     def construct(self):
@@ -37,9 +36,10 @@ class HintRecall(Scene):
                     *hint.split("\n"), line_spacing=2, font="cmr10", align="center"
                 ).scale(0.8)
             ),
-            run_time = 3
+            run_time=3,
         )
         self.wait(5)
+
 
 class Unloop(PuzzleScene):
     def construct(self):
@@ -187,10 +187,7 @@ class BreakingDownLoops(PuzzleScene):
             ),
             run_time=2,
         )
-        self.play(
-            FadeIn(bt_curve), 
-            FadeOut(b_curve, t_curve_2)
-        )
+        self.play(FadeIn(bt_curve), FadeOut(b_curve, t_curve_2))
 
         bt_func, b_t_func = bt_curve.get_function(), concat_funcs(
             PuzzleScene.get_curve("B")[0], PuzzleScene.get_curve("T")[0]
@@ -262,6 +259,46 @@ class BreakingDownLoops(PuzzleScene):
         self.wait(10)
 
 
+class RephraseQuestions(Scene):
+    def construct(self):
+        text = f"""
+        Questions you may have:
+        1. Can we break down all loops?
+        2. Which loops make up all complicated loops?
+        """.strip().replace(
+            " " * 8, ""
+        )
+
+        lines = text.split("\n")
+
+        par = Paragraph(
+            *text.split("\n"),
+            line_spacing=2,
+            font="cmr10",
+            disable_ligatures=True,
+            alignment="left",
+        ).scale(0.8)
+
+        highlight_texts = [
+            [],
+            ["all"],
+            ["Which loops"],
+        ]
+
+        for i in range(len(par)):
+            for text in highlight_texts[i]:
+                par[i][lines[i].find(text) : lines[i].find(text) + len(text)].set_color(
+                    YELLOW
+                )
+            self.play(Write(par.chars[i]))
+            if i == 0:
+                self.wait(1)
+            if i == 1:
+                self.wait(5)
+
+        self.wait(13)
+
+
 class RandomMotion(Animation):
     def __init__(self, *args, movement_size=0.3, n=5, **kwargs):
         super().__init__(*args, **kwargs)
@@ -286,46 +323,56 @@ class MoveAroundScene(PuzzleScene):
 
         self.play(
             *[nail.animate.set_stroke(WHITE, opacity=1) for nail in nails],
-            FadeIn(marty),
+            FadeIn(marty, marty.image),
         )
+
+        self.wait(15)
 
         random.seed(42)
 
         self.play(
-            *[RandomMotion(mobject) for mobject in nails + [marty]], run_time=1
+            *[RandomMotion(mobject, n=10) for mobject in nails + [marty]], run_time=10
         )  # set runtime to 5 at least for prod
 
         self.play(
             ApplyMethod(marty.move_to, ORIGIN),
             nails[0].animate.move_to(UP * 1.5).scale(3),
             nails[1].animate.move_to(DOWN * 1.5).scale(3),
+            run_time=3,
         )
+
+        self.wait(7)
 
         self.play(
             Create(
                 curve := ParametricFunction(
                     *get_interpolator(
-                        [(0, 0), (1, 0), (3, 1), (2, 4), (-2, 2), (-0.5, 0)]
+                        [(0, 0), (1, 0), (6, 1), (5, 2.7), (-2, 2), (-0.5, 0)]
                     ),
                     color=ORANGE,
                 )
-            )
+            ),
+            run_time=5,
         )
+        self.wait(10)
         self.play(
             FadeOut(curve),
             Create(rect := RoundedRectangle(width=13, height=7, z_index=-1)),
         )
-        self.play(rect.animate.stretch_to_fit_width(6))
-        self.play(rect.animate.stretch_to_fit_width(10))
-        self.play(rect.animate.stretch_to_fit_width(4))
+        self.wait(7)
+        self.play(rect.animate.stretch_to_fit_width(6), run_time=1.5)
+        self.play(rect.animate.stretch_to_fit_width(10), run_time=1.5)
+        self.play(rect.animate.stretch_to_fit_width(4), run_time=1.5)
 
         # boundary
+        self.wait(5)
 
         for nail in nails:
             nail.set_fill(BLACK, opacity=1)
         rect.data["z_index"] = -1
         rect.shift([0, 0, -1])
-        self.play(rect.animate.scale(0))
+        self.play(rect.animate.scale(0), run_time=3)
+        self.wait(10)
 
 
 class MoveAroundScene_2(PuzzleScene):
@@ -338,7 +385,7 @@ class MoveAroundScene_2(PuzzleScene):
             )
         )
         [nail.set_stroke(WHITE, opacity=1.0) for nail in nails]
-        self.add(marty, *nails)
+        self.add(marty, *nails, marty.image)
 
         pointer = Dot(color=ORANGE)
         compressed_curve = ParametricFunction(
@@ -365,9 +412,10 @@ class MoveAroundScene_2(PuzzleScene):
         self.add(pointer)
         self.add_updater(
             updater := lambda _: pointer.move_to(compressed_curve.data["points"][-1])
+            # updater := lambda _: pointer.move_to(compressed_curve.points[-1])
         )
 
-        self.play(Create(compressed_curve), run_time=3)  # use 7 for prod
+        self.play(Create(compressed_curve), run_time=7)  # use 7 for prod
         self.remove_updater(updater)
         pointer.move_to(ORIGIN)
         self.play(FadeOut(pointer))
@@ -393,7 +441,8 @@ class MoveAroundScene_2(PuzzleScene):
             )
         )
 
-        self.play(HomotopyAnimation(compressed_curve, new_curve))
+        self.play(HomotopyAnimation(compressed_curve, new_curve), run_time=3)
+        self.wait(6)
         self.play(FadeOut(compressed_curve))
 
         self.play(
@@ -409,7 +458,8 @@ class MoveAroundScene_2(PuzzleScene):
                     ),
                     color=BLUE,
                 )
-            )
+            ),
+            run_time=2,
         )
 
         self.play(
@@ -425,7 +475,8 @@ class MoveAroundScene_2(PuzzleScene):
                     ),
                     color=GREEN,
                 )
-            )
+            ),
+            run_time=2,
         )
 
         self.play(
@@ -441,11 +492,14 @@ class MoveAroundScene_2(PuzzleScene):
                     ),
                     color=RED,
                 )
-            )
+            ),
+            run_time=2,
         )
 
+        self.wait(3)
+
         self.play(
-            FadeOut(marty, *nails),
+            FadeOut(marty, *nails, marty.image),
             compressed_curve.animate.move_to(LEFT * 4.5).scale(0.3),
             b_curve.animate.move_to(LEFT * 1.5).scale(0.3),
             t_curve_1.animate.move_to(RIGHT * 1.5).scale(0.3),
@@ -455,15 +509,29 @@ class MoveAroundScene_2(PuzzleScene):
                 plus_1 := Text("→", font="cmr10"),
                 plus_2 := Text("→", font="cmr10").shift(RIGHT * 3),
             ),
+            run_time=3,
         )
 
-        self.wait(3)
+        self.wait(8)
 
         self.play(
             FadeOut(
                 compressed_curve, b_curve, t_curve_1, t_curve_2, equals, plus_1, plus_2
             )
         )
+
+
+class ElementaryLoopsQuestion(PuzzleScene):
+    def construct(self):
+        hint = "Which loops never pass through the\n center except at the beginning and end?"
+        self.play(
+            Write(
+                Paragraph(
+                    *hint.split("\n"), line_spacing=1.5, font="cmr10", align="center"
+                ).scale(0.8)
+            )
+        )
+        self.wait(7)
 
 
 class ElementaryLoops(PuzzleScene):
@@ -476,7 +544,7 @@ class ElementaryLoops(PuzzleScene):
             )
         )
         [nail.set_stroke(WHITE, opacity=1.0) for nail in nails]
-        self.play(FadeIn(marty, *nails))
+        self.play(FadeIn(marty, *nails, marty.image))
         self.wait(1)
 
         bug = Dot(color=ORANGE)
@@ -506,6 +574,83 @@ class ElementaryLoops(PuzzleScene):
         )
         self.wait(1)
         self.play(FadeOut(bug_marker, curve_marker))
+        self.wait(1)
+        self.play(FadeOut(bug, curve))
+        self.wait(1.5)
+
+        dirs = [
+            lambda t: UP * 1.5
+            + 1.5
+            * np.array(
+                [
+                    np.cos(-t * PI * 2 / 3 + 3 * PI / 2),
+                    np.sin(-t * PI * 2 / 3 + 3 * PI / 2),
+                    0,
+                ]
+            ),
+            lambda t: UP * 1.5
+            + 1.5
+            * np.array(
+                [
+                    np.cos(t * PI * 2 / 3 + 3 * PI / 2),
+                    np.sin(t * PI * 2 / 3 + 3 * PI / 2),
+                    0,
+                ]
+            ),
+            lambda t: DOWN * 1.5
+            - 1.5
+            * np.array(
+                [
+                    np.cos(t * PI * 2 / 3 + 3 * PI / 2),
+                    np.sin(t * PI * 2 / 3 + 3 * PI / 2),
+                    0,
+                ]
+            ),
+            lambda t: DOWN * 1.5
+            - 1.5
+            * np.array(
+                [
+                    np.cos(-t * PI * 2 / 3 + 3 * PI / 2),
+                    np.sin(-t * PI * 2 / 3 + 3 * PI / 2),
+                    0,
+                ]
+            ),
+        ]
+
+        tmp_bug, tmp_curve = None, None
+        for dir_func in dirs:
+            prev_bug, prev_curve = tmp_bug, tmp_curve
+            tmp_bug = Dot(color=ORANGE)
+            tmp_curve = ParametricFunction(
+                dir_func,
+                color=ORANGE
+            )
+            self.add(tmp_bug)
+            self.add_updater(lambda _: tmp_bug.move_to(tmp_curve.data["points"][-1]))
+            if prev_bug is not None:
+                self.play(Create(tmp_curve), FadeOut(prev_curve, prev_bug), run_time=1)
+            else:
+                self.play(Create(tmp_curve), run_time=0.8)
+
+        new_bug = Dot(color=ORANGE)
+        new_curve = ParametricFunction(
+            lambda t: UP * 1.5
+            + 1.5
+            * np.array(
+                [
+                    np.cos(-t * PI * 2 / 3 + 3 * PI / 2),
+                    np.sin(-t * PI * 2 / 3 + 3 * PI / 2),
+                    0,
+                ]
+            ),
+            color=ORANGE,
+        )
+        self.play(FadeIn(new_bug), FadeOut(tmp_bug, tmp_curve))
+        self.remove_updater(updater)
+        self.add_updater(updater := lambda _: new_bug.move_to(new_curve.data["points"][-1]))
+        self.play(Create(new_curve))
+
+        self.wait(2)
         self.add(
             unloop_dir := Arrow(
                 start=bug.get_center() + LEFT / 2,
@@ -513,14 +658,60 @@ class ElementaryLoops(PuzzleScene):
             ),
             t_dir := Arrow(
                 start=bug.get_center() + UP / 2, end=bug.get_center() + RIGHT + UP * 1.5
-            ),
+            ))
+        self.add(
             unloop_text := Text("Unloop")
             .scale(0.5)
-            .next_to(unloop_dir, (UP + LEFT) * 0.01)
-            .rotate(PI / 4),
+            .rotate(PI / 4)
+            .move_to(unloop_dir.get_center() + (UP + LEFT) * 0.3),
             t_text := Text("Loop")
             .scale(0.5)
-            .next_to(t_dir, (UP + LEFT) * 0.01)
-            .rotate(PI / 4),
+            .rotate(PI / 4)
+            .move_to(t_dir.get_center() + (UP + LEFT) * 0.3),
         )
-        self.wait(3)
+        self.wait(20)
+
+
+class AllElementaryLoops(PuzzleScene):
+    def construct(self):
+        marty, _unused_rope, nails, nails_group = (
+            puzzle := self.setup_puzzle(
+                nail_positions=[UP * 1.5, DOWN * 1.5],
+                nail_radius=1.5,
+                do_add=False,
+            )
+        )
+        [nail.set_stroke(WHITE, opacity=1.0) for nail in nails]
+        self.play(FadeIn(marty, *nails, marty.image))
+        self.wait(8)
+
+        curve_notations = [
+            lambda t: UP * 1.5
+            + 1.5
+            * np.array([np.cos((t - 1 / 4) * PI * 2), np.sin((t - 1 / 4) * PI * 2), 0]),
+            lambda t: UP * 1.5
+            + 1.5
+            * np.array(
+                [np.cos((-t - 1 / 4) * PI * 2), np.sin((-t - 1 / 4) * PI * 2), 0]
+            ),
+            lambda t: DOWN * 1.5
+            + 1.5
+            * np.array([np.cos((t + 1 / 4) * PI * 2), np.sin((t + 1 / 4) * PI * 2), 0]),
+            lambda t: DOWN * 1.5
+            + 1.5
+            * np.array(
+                [np.cos((-t + 1 / 4) * PI * 2), np.sin((-t + 1 / 4) * PI * 2), 0]
+            ),
+        ]
+
+        for func in curve_notations:
+            self.play(
+                Create(
+                    curve := ParametricFunction(
+                        func,
+                        color=ORANGE,
+                    )
+                )
+            )
+            self.play(FadeOut(curve))
+        self.wait(10)

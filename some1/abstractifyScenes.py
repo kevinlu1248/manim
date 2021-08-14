@@ -42,7 +42,7 @@ class Konisberg(Scene):
 
         vertices = VGroup(
             *[
-                Circle(radius=0.3, color=BLACK).set_fill(BLUE, 1).shift(coord)
+                Circle(radius=0.3, color=BLACK).set_fill(RED, 1).shift(coord)
                 for coord in coords
             ]
         )
@@ -67,12 +67,12 @@ class Konisberg(Scene):
         animations = []
         for curve in curves:
             if len(curve) == 4:
-                animations.append(Create(bezier := CubicBezier(*curve, color=BLUE_E)))
+                animations.append(Create(bezier := CubicBezier(*curve, stroke_width=10, color=ORANGE)))
                 self.bring_to_back(bezier)
                 self.bring_to_back(konisberg)
             if len(curve) == 2:
                 animations.append(
-                    (Create(line := Line(curve[0], curve[1], color=BLUE_E)))
+                    (Create(line := Line(curve[0], curve[1], color=ORANGE, stroke_width=10)))
                 )
                 self.bring_to_back(line)
                 self.bring_to_back(konisberg)
@@ -101,9 +101,11 @@ class AbstractifyAnimation(PuzzleScene):
         self.wait(2)
         self.play(rope.redrawn_mobjects["curve"].animate.set_stroke(color=ORANGE))
         self.wait(10)
-        
+
         self.add(tracker := Dot(color=ORANGE))
-        curve = ParametricFunction(rope.redrawn_mobjects["curve"].get_function(), color=ORANGE)
+        curve = ParametricFunction(
+            rope.redrawn_mobjects["curve"].get_function(), color=ORANGE
+        )
         self.add_updater(lambda _: tracker.move_to(curve.data["points"][-1]))
         self.play(Create(curve), run_time=3)
         self.play(Flash(marty))
@@ -128,7 +130,7 @@ class PaperAnalogy(Scene):
         self.camera.set_euler_angles(phi=60 * DEGREES, theta=-45 * DEGREES)
         self.add_updater(
             lambda _: self.camera.set_theta(
-                theta=self.camera.data["euler_angles"][0] - 0.3 * DEGREES
+                theta=self.camera.data["euler_angles"][0] - 0.1 * DEGREES
             )
         )
 
@@ -141,7 +143,7 @@ class PaperAnalogy(Scene):
                     color="#f2eecb",
                 )
             ),
-            run_time=3
+            run_time=3,
         )
         self.wait(1)
         self.play(
@@ -155,7 +157,7 @@ class PaperAnalogy(Scene):
                 .set_fill(BLACK, 1)
                 .shift(LEFT * 2 + DOWN)
             ),
-            run_time=3
+            run_time=3,
         )
         marty = Dot(color=YELLOW)
         marty.set_fill(GRAPHITE_COLOR, 1)
@@ -214,14 +216,22 @@ class PaperAnalogy(Scene):
 
 class SameLoopsQuestion(Scene):
     def construct(self):
-        self.play(Write(Text("How do we know if two loops are the same?", font="cmr10").scale(0.8)), run_time=2)
+        self.play(
+            Write(
+                Text("How do we know if two loops are the same?", font="cmr10").scale(
+                    0.8
+                )
+            ),
+            run_time=2,
+        )
         self.wait(3)
+
 
 class SameLoopsL(PuzzleScene):
     def construct(self):
-        marty, rope, nails, nails_group = (puzzle := self.setup_puzzle(
-            *PuzzleScene.get_curve("T")
-        ))
+        marty, rope, nails, nails_group = (
+            puzzle := self.setup_puzzle(*PuzzleScene.get_curve("T"))
+        )
 
         marty.set_moment((0.3, 0))
         self.wait(5)
@@ -229,12 +239,15 @@ class SameLoopsL(PuzzleScene):
         marty.set_moment((0.5, 0))
         self.wait(4)
         self.reset_puzzle(*puzzle)
+
 
 class SameLoopsR(PuzzleScene):
     def construct(self):
-        marty, rope, nails, nails_group = (puzzle := self.setup_puzzle(
-            *get_interpolator([(0, 0), (-1, 2), (-3, 3), (-4, 2), (-1, 0)])
-        ))
+        marty, rope, nails, nails_group = (
+            puzzle := self.setup_puzzle(
+                *get_interpolator([(0, 0), (-1, 2), (-3, 3), (-4, 2), (-1, 0)])
+            )
+        )
 
         marty.set_moment((0.3, 0))
         self.wait(5)
@@ -242,6 +255,7 @@ class SameLoopsR(PuzzleScene):
         marty.set_moment((0.5, 0))
         self.wait(4)
         self.reset_puzzle(*puzzle)
+
 
 class EquivalentLoops_1(PuzzleScene):
     def construct(self):
@@ -307,35 +321,42 @@ class EquivalentLoopsHomotopy(PuzzleScene):
         )
 
         other_curve_func, other_t_range = get_interpolator([(0, 0), (1, -2), (3, -2)])
-        self.wait(1)
-        self.play(
-            Create(
-                curve := ParametricFunction(other_curve_func, other_t_range, color=BLUE)
-            ),
-        )
-        self.wait(1)
+        # self.wait(1)
+        # self.play(
+        #     Create(
+        #         curve := ParametricFunction(other_curve_func, other_t_range, color=BLUE)
+        #     ),
+        # )
+        # self.wait(1)
 
-        self.play(
-            HomotopyAnimation(
-                curve,
-                rope.redrawn_mobjects["curve"],
-                rate_func=rate_functions.ease_in_out_cubic,
-            ),
-            run_time=5
-        )
-        self.play(FadeOut(curve))
-        self.wait(1)
+        # self.play(
+        #     HomotopyAnimation(
+        #         curve,
+        #         rope.redrawn_mobjects["curve"],
+        #         rate_func=rate_functions.ease_in_out_cubic,
+        #     ),
+        #     run_time=5,
+        # )
+        # self.play(FadeOut(curve))
+        # self.wait(1)
 
         func, range = PuzzleScene.get_curve("T")
         curve = ParametricFunction(lambda t: func(1 - t), color=GREEN)
 
-        not_allowed_func = lambda t: 0.15 * rope.redrawn_mobjects[
-            "curve"
-        ].get_function()(t) + (1 - 0.15) * func(1 - t)
+        # not_allowed_func = lambda t: 0.15 * rope.redrawn_mobjects[
+        #     "curve"
+        # ].get_function()(t) + (1 - 0.15) * func(1 - t)
+
+        not_allowed_func, _ = get_interpolator([
+            (0, 0),
+            (-2, 0),
+            (-3, 1),
+            (-2, 2)
+        ])
 
         self.play(Create(curve))
         self.play(
-            HomotopyWithColorChange(
+            Homotopy(
                 curve,
                 ParametricFunction(not_allowed_func),
                 rate_func=rate_functions.ease_in_out_cubic,
@@ -362,7 +383,7 @@ class EquivalentLoopsHomotopy(PuzzleScene):
                 rope.redrawn_mobjects["curve"],
                 rate_func=rate_functions.ease_in_out_cubic,
             ),
-            run_time=3
+            run_time=3,
         )
 
         self.wait(5)
@@ -375,14 +396,18 @@ class AbstractifiedQuestionSummary(Scene):
         How do we construct a loop not equivalent
         to a loop going around neither holes, 
         unless a hole is filled in?
-        """.strip().replace(" " * 8, "")
-        lines = text.split('\n')
-        par = Paragraph(*text.split('\n'), line_spacing=2, font="cmr10", disable_ligatures=True)
+        """.strip().replace(
+            " " * 8, ""
+        )
+        lines = text.split("\n")
+        par = Paragraph(
+            *text.split("\n"), line_spacing=2, font="cmr10", disable_ligatures=True
+        )
         highlight_texts = [
             [],
             ["not equivalent"],
             ["loop going around neither holes"],
-            ["unless"]
+            ["unless"],
         ]
 
         for i in range(len(par)):

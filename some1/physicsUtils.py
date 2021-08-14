@@ -27,6 +27,7 @@ def polar2cart(r, theta):
 def get_interpolator(
     vectors, offset=0.001, do_use_polar=False, use_periodic=False, do_loop=True
 ):
+    # offset=0
     if do_loop:
         vectors = vectors + [vectors[0] + np.array([offset, offset])]
     # vectors = vectors + [vectors[0], vectors[1]]

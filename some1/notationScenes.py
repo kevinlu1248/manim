@@ -22,9 +22,10 @@ from rephraseScenes import concat_funcs
 class NotationTitle(Scene):
     def construct(self):
         self.play(
-            Write(Text("Part 3:", font="cmr10", color=YELLOW).shift(LEFT * 4 + UP * 2))
+            Write(Text("Part 3:", font="cmr10", color=YELLOW).shift(LEFT * 4 + UP * 2), run_time=3)
         )
-        self.play(Write(Text("Notation", font="cmr10").scale(3)))
+        self.play(Write(Text("Notation", font="cmr10").scale(3)), run_time=3)
+        self.wait(10)
 
 
 class CubingScene(ThreeDScene):
@@ -36,12 +37,14 @@ class CubingScene(ThreeDScene):
         self.renderer.camera.frame_center = cube.get_center()
 
         self.play(FadeIn(cube))
+        self.wait(10)
 
         algo = ["R'", "F", "R", "F'"]
         algo_display = Text("".join(algo), font="cmr10").scale(1.5)
         self.add_fixed_in_frame_mobjects(algo_display)
         algo_display.shift(UP * 3 + LEFT * 4.5)
         self.play(FadeIn(algo_display))
+        self.wait(6)
 
         indices = [0, 2, 3, 4, 6]
 
@@ -69,6 +72,7 @@ class NotationIntro(PuzzleScene):
         )
         [nail.set_stroke(WHITE, opacity=1.0) for nail in nails]
         self.play(FadeIn(marty, *nails))
+        self.wait(4)
 
         curve_notations = [
             (
@@ -114,8 +118,11 @@ class NotationIntro(PuzzleScene):
                     )
                 ),
                 Write(text := char.scale(3).shift(LEFT * 4)),
+                run_time=1.5
             )
             self.play(FadeOut(curve, text))
+
+        self.wait(2)
 
         self.play(
             FadeOut(marty, *nails),
@@ -188,6 +195,8 @@ class NotationIntro(PuzzleScene):
             ),
         )
 
+        self.wait(1)
+
         self.play(
             FadeOut(b_curve, t_curve_1, t_curve_2),
             FadeIn(
@@ -205,10 +214,14 @@ class NotationIntro(PuzzleScene):
             t_text_1.animate.move_to(RIGHT * 1.5),
             t_text_2.animate.move_to(RIGHT * 3),
         )
+        
+        self.wait(3)
 
         self.play(
             FadeOut(curve, b_text, equals, t_text_1, t_text_2), FadeIn(marty, *nails)
         )
+
+        self.wait(3)
 
         self.play(
             marty.animate.move_to(ORIGIN),
@@ -219,10 +232,10 @@ class NotationIntro(PuzzleScene):
         self.play(
             Create(ParametricFunction(*PuzzleScene.get_curve("BTT"), color=ORANGE)),
             Write(Text("BTT", font="cmr10").shift(RIGHT * 3).scale(2)),
-            run_time=3,
+            run_time=2,
         )
 
-        self.wait(3)
+        self.wait(16)
 
 
 class NonCommutativity(PuzzleScene):
@@ -255,10 +268,17 @@ class NonCommutativity(PuzzleScene):
                     RIGHT * 4
                 )
             ),
+            Write(
+                Text("TB", font="cmr10").scale(1.5).shift(LEFT * 2 + UP * 2.5)
+            ),
+            Write(
+                Text("BT", font="cmr10").scale(1.5).shift(RIGHT * 4 + UP * 2.5)
+            ),
             run_time=3,
         )
 
-        self.play(FadeOut(*self.mobjects))
+        self.wait(15)
+        # self.play(FadeOut(*self.mobjects))
 
 
 def to_latex(*simplified_notations):
@@ -287,6 +307,7 @@ class Inversibility(PuzzleScene):
             )
         )
         marty.set_moment((0.5, 0))
+        self.wait(2)
         self.play(
             Write(
                 notation := MathTex(r"\text{B}\overline{\text{B}}")
@@ -294,9 +315,9 @@ class Inversibility(PuzzleScene):
                 .shift(UP * 2.5)
             )
         )
-        self.wait(2)
+        self.wait(1)
         marty.set_moment((1.5, 0))
-        self.wait(2)
+        self.wait(1)
 
         self.play(FadeOut(rope.redrawn_mobjects["curve"], *nails))
 
@@ -317,6 +338,10 @@ class Inversibility(PuzzleScene):
                 ),
             )
             self.wait(1)
+            if simplified_notation == "TT'":
+                self.wait(2)
+        
+        self.wait(2)
 
 
 class InversibilityInside(PuzzleScene):
@@ -325,8 +350,8 @@ class InversibilityInside(PuzzleScene):
         marty, rope, nails, nails_group = (
             puzzle := self.setup_puzzle(
                 concat_funcs(
-                    PuzzleScene.get_curve("BT'")[0],
-                    PuzzleScene.get_curve("T", radius=0.9)[0],
+                    PuzzleScene.get_curve("BT")[0],
+                    PuzzleScene.get_curve("T'", radius=0.9)[0],
                 ),
                 [0, 1],
                 use_circle_nails=True,
@@ -335,8 +360,9 @@ class InversibilityInside(PuzzleScene):
                 },
             )
         )
+        self.wait(7)
         marty.set_moment((0.5, 0))
-        self.play(Write(notation := MathTex(to_latex("BT'T")).scale(2).shift(UP * 2.5)))
+        self.play(Write(notation := MathTex(to_latex("BTT'")).scale(2).shift(UP * 2.5)))
         self.play(
             self.camera.animate.shift(RIGHT * 2), notation.animate.shift(RIGHT * 2)
         )
@@ -350,7 +376,7 @@ class InversibilityInside(PuzzleScene):
 
         self.remove(marty)
         self.play(
-            FadeOut(rope.redrawn_mobjects["curve"], *nails, notation), Flash(marty)
+            FadeOut(rope.redrawn_mobjects["curve"], *nails, notation, marty.image), Flash(marty)
         )
 
 
@@ -366,16 +392,23 @@ class InversibilityText(Scene):
             self.add(new_eq)
             self.remove(eq)
             eq = new_eq
-        self.wait(3)
+        self.wait(8)
 
 
 class FurtherNonCommutativity(PuzzleScene):
     def construct(self):
         # TBT' != TTB
         self.play(Write(unequal := MathTex(to_latex("BTT' = B")).scale(2)))
+        self.wait(1)
         self.play(unequal.animate.shift(UP * 2), Write(MathTex(r"\text{but}").scale(2)))
+        self.wait(1)
         self.play(Write(MathTex(to_latex(r"TBT' \not= B")).scale(2).shift(DOWN * 2)))
-        self.play(FadeOut(*self.mobjects))
+        self.wait(5)
+        # self.play(FadeOut(*self.mobjects))
+
+
+# class FurtherNonCommutativity(PuzzleScene):
+#     def construct(self):
 
 
 class FillingHole(PuzzleScene):
@@ -399,9 +432,9 @@ class FillingHole(PuzzleScene):
         self.play(
             self.camera.animate.shift(RIGHT * 2), notation.animate.shift(RIGHT * 2)
         )
-        self.wait(2)
+        self.wait(7)
         nails[0].disappear()
-        self.wait(1)
+        self.wait(3)
         self.play(
             FadeOut(notation[0], notation[2]),
         )
@@ -412,46 +445,48 @@ class FillingHole(PuzzleScene):
                 rope.redrawn_mobjects["curve"],
                 *[nail for nail in nails if nail in self.mobjects],
                 notation[1],
+                marty.image,
             ),
             Flash(marty),
         )
+        self.wait(5)
 
 
 class NotationSummary(Scene):
     def construct(self):
-        text = r"""
-        \begin{flushleft}
-        Filling the holes with the new notation:\\ 
-        - Top hole = removing all occurences of B, $\overline{\text{B}}$\\ 
-        - Bottom hole = removing all occurences of T, $\overline{\text{T}}$
-        \end{flushleft}
-        """.strip().replace(
-            " " * 8, ""
-        )
+        # text = r"""
+        # \begin{flushleft}
+        # Filling the holes with the new notation:\\ 
+        # - Top hole = removing all occurences of B, $\overline{\text{B}}$\\ 
+        # - Bottom hole = removing all occurences of T, $\overline{\text{T}}$
+        # \end{flushleft}
+        # """.strip().replace(
+        #     " " * 8, ""
+        # )
 
-        lines = text.split("\n")
+        # lines = text.split("\n")
 
-        par = Tex(text, line_spacing=2)  # TODO: adjust line spacing
+        # par = Tex(text, line_spacing=2)  # TODO: adjust line spacing
 
-        self.play(Write(par))
-        self.wait(3)
+        # self.play(Write(par))
+        # self.wait(3)
 
-        self.play(FadeOut(par))
+        # self.play(FadeOut(par))
 
         hint = r"""
         \begin{flushleft}
         Rephrased puzzle: \\ 
         Is there a sequence composed of B, B', T, and T' (not equal to U), \\ 
         such that removing all occurences of B and B', or T and T' \\ 
-        will result in the remaining terms cancel out to form U?
+        will result in the remaining terms cancelling out to form U?
         \end{flushleft}
         """.replace(
             "B'", r"$\overline{\text{B}}$"
         ).replace(
             "T'", r"$\overline{\text{T}}$"
         )
-        self.play(Write(Tex(hint)))
-        self.wait(5)
+        self.play(FadeIn(Tex(hint, font="cmr10").scale(0.85)), run_time=1)
+        self.wait(18)
 
 
 class CloseToAnswer(PuzzleScene):
@@ -472,7 +507,7 @@ class CloseToAnswer(PuzzleScene):
             )
         )
         marty.set_moment((0.5, 0))
-        self.wait(3)
+        self.wait(6)
         nails[1].disappear()
         new_notation = MathTex(*to_latex("T", "T'")).scale(2).shift(UP * 2.5)
         self.wait(1)
@@ -498,6 +533,14 @@ class CloseToAnswer(PuzzleScene):
             )
         )
 
+class CloseToAnswerText(Scene):
+    def construct(self):
+        self.play(Write(initial_text := MathTex(*to_latex("T", "B", "T'")).scale(2)))
+        self.wait(5)
+        to_text = MathTex(*to_latex("T", "B", "T'", "B'")).scale(2)
+        self.play(initial_text.animate.move_to(to_text[:-1]), Write(to_text[-1]))
+        self.wait(10)
+
 
 class FinalAnswer_1(PuzzleScene):
     def construct(self):
@@ -517,7 +560,7 @@ class FinalAnswer_1(PuzzleScene):
             )
         )
         marty.set_moment((0.5, 0))
-        self.wait(3)
+        self.wait(8)
         nails[1].disappear()
         new_notation = MathTex(*to_latex("T", "T'")).scale(2).shift(UP * 2.5)
         self.wait(1)
@@ -561,7 +604,7 @@ class FinalAnswer_2(PuzzleScene):
             )
         )
         marty.set_moment((0.5, 0))
-        self.wait(3)
+        self.wait(8)
         nails[0].disappear()
         new_notation = MathTex(*to_latex("B", "B'")).scale(2).shift(UP * 2.5)
         self.wait(1)
@@ -595,7 +638,7 @@ class NotationAnswer(Scene):
                 src := MathTex(*to_latex("T", "T'", "B", "B'")).scale(2),
             ),
         )
-        self.wait(2)
+        self.wait(10)
         self.play(
             FadeOut(eq[1]),
             FadeIn(Tex(r"$\not=$ ").scale(2).move_to(eq[1])),
@@ -605,7 +648,7 @@ class NotationAnswer(Scene):
                 path_arc=PI / 2,
             ),
         )
-        self.wait(2)
+        self.wait(5)
 
 
 class SolutionSummary(Scene):

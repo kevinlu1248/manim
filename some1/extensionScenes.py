@@ -17,13 +17,16 @@ from abstractifyScenes import HomotopyAnimation
 from rephraseScenes import concat_funcs
 from notationScenes import to_latex
 
+import pymunk
+
 
 class ExtensionTitle(Scene):
     def construct(self):
         self.play(
-            Write(Text("Part 4:", font="cmr10", color=YELLOW).shift(LEFT * 4 + UP * 2))
+            Write(Text("Part 4:", font="cmr10", color=YELLOW).shift(LEFT * 4 + UP * 2), run_time=3)
         )
-        self.play(Write(Text("Extension", font="cmr10").scale(3)))
+        self.play(Write(Text("Extension", font="cmr10").scale(3)), run_time=3)
+        self.wait(20)
 
 
 class ThreeStakes(PuzzleScene):
@@ -34,7 +37,8 @@ class ThreeStakes(PuzzleScene):
                 do_add=False,
             )
         )
-        self.play(FadeIn(marty, *nails, *[nail.svg for nail in nails]))
+        self.play(FadeIn(marty, *nails, *[nail.svg for nail in nails], marty.image))
+        self.wait(10)
 
         self.play(
             FadeOut(*[nail.svg for nail in nails]),
@@ -53,14 +57,13 @@ class ThreeStakes(PuzzleScene):
             nails[1].animate.move_to(2 * RIGHT),
         )
 
-        self.play(Write(r_text := Text("R", font="cmr10").next_to(nails[1], RIGHT * 2)))
 
-        self.wait(1)
+        self.wait(3)
 
         # TODO: use homotopy
 
         self.play(
-            FadeOut(*nails, r_text),
+            FadeOut(*nails),
             FadeIn(
                 ParametricFunction(
                     lambda t: 3
@@ -71,8 +74,12 @@ class ThreeStakes(PuzzleScene):
                 )
             ),
         )
+        
+        self.wait(2)
 
-        self.wait(1)
+        self.play(Write(r_text := Text("R", font="cmr10").next_to(nails[1], RIGHT * 4)))
+
+        self.wait(2)
 
 
 class ExtensionStakes(Scene):
@@ -110,4 +117,118 @@ class ExtensionStakes(Scene):
             if i >= 1:
                 self.wait(2)
 
-        self.play(FadeOut(par))
+        self.wait(20)
+        # self.play(FadeOut(par))
+
+class PictureHanging_1(SpaceSceneWithRopes):
+    def construct(self):
+        self.space.space.gravity = 0, 0
+        self.space.space.damping = 0.3
+        self.play(
+            Create(nail1 := Circle(radius=.5).shift(LEFT * 2 + UP * 2).set_stroke(WHITE)),
+            Create(nail2 := Circle(radius=.5).shift(RIGHT * 2 + UP * 2).set_stroke(WHITE))
+        )
+        self.make_static_body(nail1, nail2)
+        default_rope_config = {
+            "k": 22,
+            "do_loop": True,
+            "color": ORANGE,
+            # "offset": 0
+            "rope_creation_speed": 3
+        }
+        rope = self.make_rope(
+            *get_interpolator([
+                (0, -2), 
+                (-3, 2),
+                (-2, 3),
+                (0, 3),
+                (2, 1),
+                (3, 2),
+                (2, 3),
+                (0, 3),
+                (-2, 3),
+                (-3, 2),
+                (-2, 1),
+                (0, 2),
+                (2, 3),
+                (3, 2),
+                (1, -1.5)
+            ], offset=0),
+            **default_rope_config
+        )
+        self.space.space.gravity = 0, -10
+        self.wait(2)
+        nail2.shape.filter = pymunk.ShapeFilter(group=PuzzleScene.num_of_chains)
+        self.play(FadeOut(nail2))
+        self.wait(4)
+        self.play(FadeOut(nail1))
+
+
+class PictureHanging_2(SpaceSceneWithRopes):
+    def construct(self):
+        self.space.space.gravity = 0, 0
+        self.space.space.damping = 0.3
+        self.play(
+            Create(nail1 := Circle(radius=.5).shift(LEFT * 2 + UP * 2).set_stroke(WHITE)),
+            Create(nail2 := Circle(radius=.5).shift(RIGHT * 2 + UP * 2).set_stroke(WHITE))
+        )
+        self.make_static_body(nail1, nail2)
+        default_rope_config = {
+            "k": 22,
+            "do_loop": True,
+            "color": ORANGE,
+            # "offset": 0
+            "rope_creation_speed": 3
+        }
+        rope = self.make_rope(
+            *get_interpolator([
+                (0, -2), 
+                (-3, 2),
+                (-2, 3),
+                (0, 3),
+                (2, 1),
+                (3, 2),
+                (2, 3),
+                (0, 3),
+                (-2, 3),
+                (-3, 2),
+                (-2, 1),
+                (0, 2),
+                (2, 3),
+                (3, 2),
+                (1, -1.5)
+            ], offset=0),
+            **default_rope_config
+        )
+        self.space.space.gravity = 0, -10
+        self.wait(2)
+        nail1.shape.filter = pymunk.ShapeFilter(group=PuzzleScene.num_of_chains)
+        self.play(FadeOut(nail1))
+        self.wait(4)
+        self.play(FadeOut(nail2))
+
+class FurtherTitle(Scene):
+    def construct(self):
+        self.play(
+            Write(Text("Part 5:", font="cmr10", color=YELLOW).shift(LEFT * 4 + UP * 2))
+        )
+        self.play(Write(Text("Further", font="cmr10").scale(3)))
+        self.wait(18)
+
+class FurtherTopics(Scene):
+    def construct(self):
+        hint = """
+        Related or used topics:
+        - Homotopy = equivalences via a continuous motion
+        - Fundamental groups =  loops in some space under homotopy
+        - Free groups = sequences of letters and their inverses
+        - Knot theory = study of knots
+        """.strip().replace(" " * 8, "")
+        self.play(
+            FadeIn(
+                Paragraph(
+                    *hint.split("\n"), line_spacing=2, font="cmr10", align="center"
+                ).scale(0.6)
+            )
+        )
+        self.wait(5)
